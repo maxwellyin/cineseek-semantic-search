@@ -1,0 +1,11 @@
+torch
+faiss-cpu
+pandas
+numpy
+scikit-learn
+fastapi
+uvicorn
+jinja2
+python-multipart
+sentence-transformers
+wandb

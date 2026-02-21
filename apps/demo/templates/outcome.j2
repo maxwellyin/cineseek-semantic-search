@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %} Recommendation List {% endblock %}
+
+{% block content %}
+
+<h1>Input</h1>
+
+<p>
+{{text}}
+</p>
+
+<h1>Recommendations</h1>
+{% for candidate in candidates %}
+    <p><strong>{{ candidate.title }}</strong><br>{{ candidate.metadata }}</p>
+{% endfor %}
+
+<a href="{{ url_for('demo') }}">Return</a>
+
+{% endblock %}

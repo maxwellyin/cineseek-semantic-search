@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %} FAISS-based Movie Recommendation System {% endblock %}
+
+{% block content %}
+
+<h1>Text-to-Title Movie Retrieval System</h1>
+
+<h2>Abstract</h2>
+<p>This project turns the MSRD movie search dataset into an end-to-end query-to-movie retrieval system. A dual-tower model learns how real user search queries map to movie titles and metadata, then serves low-latency recommendations through a FAISS index and a FastAPI demo. The pipeline is designed for local development on Apple Silicon with MPS acceleration when available.</p>
+
+<a href="/demo">Try our Demo</a>
+
+{% endblock %}

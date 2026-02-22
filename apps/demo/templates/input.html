@@ -1,19 +1,73 @@
 {% extends "base.html" %}
-{% block title %} Text-to-Title Demo {% endblock %}
+{% block title %}CineSeek Search{% endblock %}
 
 {% block content %}
+<section class="page-card">
+  <div class="row g-4 align-items-start">
+    <div class="col-lg-8">
+      <div class="eyebrow mb-3">Search Interface</div>
+      <h1 class="section-title" style="font-size:2.7rem;">Describe a movie the way a user actually would.</h1>
+      <p class="body-copy">
+        CineSeek will encode your query, retrieve candidates from the FAISS index, and by default pass them through a local LangChain + Ollama reranker for query rewrite, explanation, and final ordering.
+      </p>
+      <form class="search-form mt-4" action="{{ url_for('search') }}" method="POST" id="search-form">
+        <label class="mini-label mb-2 d-block" for="query-box">Search query</label>
+        <textarea id="query-box" name="text" class="form-control" required>sci-fi action movies about virtual reality and artificial intelligence</textarea>
+        <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mt-3">
+          <div>
+            <label class="mini-label d-flex align-items-center gap-2">
+              <input type="checkbox" name="use_agent" value="1" checked>
+              Enable local agent reranking and explanation
+            </label>
+            <div class="mini-label mt-2">Default backend: <span class="mono">ollama:qwen3:8b</span></div>
+          </div>
+          <button type="submit" class="btn primary-btn" id="search-submit">Search Movies</button>
+        </div>
+        <div id="search-loading" class="result-card mt-3 d-none">
+          <div class="d-flex align-items-center gap-3">
+            <div class="spinner-border spinner-border-sm" style="color: var(--accent);" role="status" aria-hidden="true"></div>
+            <div>
+              <div class="mini-label mb-1">Working</div>
+              <div class="body-copy mb-0">Please wait a moment while CineSeek retrieves, reranks, and explains the results.</div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="col-lg-4">
+      <div class="accent-panel">
+        <div class="eyebrow text-white-50 mb-3">Suggested Queries</div>
+        <p class="body-copy text-white-50 mb-3">Queries that usually show the retrieval system well:</p>
+        <div class="d-grid gap-3">
+          <div>
+            <div class="mini-label text-white-50 mb-1">Franchise search</div>
+            <div class="mono text-white">the matrix movie</div>
+          </div>
+          <div>
+            <div class="mini-label text-white-50 mb-1">Concept search</div>
+            <div class="mono text-white">sci-fi action movies about virtual reality and artificial intelligence</div>
+          </div>
+          <div>
+            <div class="mini-label text-white-50 mb-1">Tone + plot</div>
+            <div class="mono text-white">psychological thriller about memory loss and identity</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+  (function () {
+    const form = document.getElementById("search-form");
+    const submitButton = document.getElementById("search-submit");
+    const loadingCard = document.getElementById("search-loading");
+    if (!form || !submitButton || !loadingCard) return;
 
-<h1>Movie Recommendation Demo</h1>
-
-<form action="{{ url_for('demo') }}" method="POST">
-  <label for="fname">Enter a movie search query:</label><br>
-  <textarea type="text" name="text" rows="4" cols="100" required>the matrix movie</textarea><br>
-  <br>
-  <input type="submit" value="Recommend">
-</form> 
-
-<p>This demo encodes your search query with a sentence-transformer, projects it through the query tower, and retrieves matching movie titles from a FAISS index built on MSRD, a movie search relevance dataset.</p>
-
-<a href="{{ url_for('home') }}">Home</a>
-
+    form.addEventListener("submit", function () {
+      submitButton.disabled = true;
+      submitButton.textContent = "Searching...";
+      loadingCard.classList.remove("d-none");
+    });
+  })();
+</script>
 {% endblock %}

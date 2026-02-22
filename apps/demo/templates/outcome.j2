@@ -1,19 +1,56 @@
 {% extends "base.html" %}
-{% block title %} Recommendation List {% endblock %}
+{% block title %}CineSeek Results{% endblock %}
 
 {% block content %}
+<section class="page-card">
+  <div class="row g-4">
+    <div class="col-lg-5">
+      <div class="eyebrow mb-3">Query</div>
+      <h1 class="section-title">Search results</h1>
+      <p class="body-copy mb-4">{{ text }}</p>
 
-<h1>Input</h1>
+      {% if query_used and query_used != text %}
+      <div class="result-card mb-3">
+        <div class="mini-label mb-2">Agent-rewritten query</div>
+        <div class="body-copy mb-0">{{ query_used }}</div>
+      </div>
+      {% endif %}
 
-<p>
-{{text}}
-</p>
+      {% if agent_enabled %}
+      <div class="agent-note">
+        <div class="eyebrow text-white-50 mb-2">Agent Layer</div>
+        {% if agent_model %}
+        <div class="mini-label text-white-50 mb-2">Model: {{ agent_model }}</div>
+        {% endif %}
+        {% if agent_explanation %}
+        <p class="body-copy text-white-50 mb-0">{{ agent_explanation }}</p>
+        {% endif %}
+        {% if agent_error %}
+        <p class="body-copy text-white-50 mb-0"><strong>Fallback:</strong> {{ agent_error }}</p>
+        {% endif %}
+      </div>
+      {% endif %}
 
-<h1>Recommendations</h1>
-{% for candidate in candidates %}
-    <p><strong>{{ candidate.title }}</strong><br>{{ candidate.metadata }}</p>
-{% endfor %}
+      <div class="mt-4">
+        <a class="ghost-link" href="{{ url_for('search') }}">Run another search</a>
+      </div>
+    </div>
 
-<a href="{{ url_for('demo') }}">Return</a>
-
+    <div class="col-lg-7">
+      <div class="eyebrow mb-3">Top Matches</div>
+      <div class="d-grid gap-3">
+        {% for candidate in candidates %}
+        <div class="result-card">
+          <div class="d-flex align-items-center mb-2">
+            <span class="result-rank">{{ loop.index }}</span>
+            <h2 class="result-title">{{ candidate.title }}</h2>
+          </div>
+          <div class="mini-label mb-2">Retrieval score: {{ "%.4f"|format(candidate.score) }}</div>
+          <p class="body-copy mb-0">{{ candidate.metadata }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock %}

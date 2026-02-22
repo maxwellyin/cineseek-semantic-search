@@ -5,6 +5,7 @@ from functools import lru_cache
 import torch
 from sentence_transformers import SentenceTransformer
 
+from flcr.agent.langchain_agent import agent_is_available, agent_recommend
 from flcr.config import CHECKPOINT_PATH, DATASET_PATH, DEVICE, INDEX_PATH, SENTENCE_MODEL_DIR, SENTENCE_TRANSFORMER_DEVICE
 from flcr.search import load_index, search_index
 from flcr.train import build_model
@@ -22,7 +23,7 @@ def load_assets():
     return dataset, model, index, sentence_model
 
 
-def recommend(raw_text: str, k: int = 12):
+def direct_recommend(raw_text: str, k: int = 12):
     dataset, model, index, sentence_model = load_assets()
     query_embedding = sentence_model.encode(
         [raw_text],
@@ -45,4 +46,20 @@ def recommend(raw_text: str, k: int = 12):
                 "score": float(score),
             }
         )
-    return {"recommendations": recommendations}
+    return {"query_used": raw_text, "recommendations": recommendations}
+
+
+def recommend(raw_text: str, k: int = 12, use_agent: bool = False):
+    if use_agent:
+        available, reason = agent_is_available()
+        if available:
+            try:
+                return agent_recommend(raw_text)
+            except Exception as exc:  # pragma: no cover - defensive runtime fallback
+                fallback = direct_recommend(raw_text, k=k)
+                fallback["agent_error"] = f"Agent fallback: {exc}"
+                return fallback
+        fallback = direct_recommend(raw_text, k=k)
+        fallback["agent_error"] = reason
+        return fallback
+    return direct_recommend(raw_text, k=k)

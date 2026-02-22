@@ -1,13 +1,79 @@
 {% extends "base.html" %}
-{% block title %} FAISS-based Movie Recommendation System {% endblock %}
+{% block title %}CineSeek{% endblock %}
 
 {% block content %}
+<section class="page-card">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow mb-3">Retrieval System</div>
+      <h1 class="display-title">Search movies by meaning, not keywords.</h1>
+      <p class="lede">
+        CineSeek is a local-first movie search system built for portfolio-quality retrieval work. It combines a dual-tower ranker trained on real movie search judgments, FAISS serving for low-latency candidate retrieval, and an optional LangChain + Ollama layer for query rewrite, reranking, and explanation.
+      </p>
+      <div class="d-flex flex-wrap gap-3 mt-4">
+        <a class="btn primary-btn" href="{{ url_for('search') }}">Try Search</a>
+        <a class="ghost-link align-self-center" href="https://github.com/" target="_blank" rel="noreferrer">View source</a>
+      </div>
+    </div>
+    <div class="accent-panel">
+      <div class="eyebrow text-white-50 mb-3">System Snapshot</div>
+      <h2 class="section-title text-white">Built to show retrieval engineering, not just a chat wrapper.</h2>
+      <p class="body-copy text-white-50">
+        The core path stays explicit: sentence-transformer embeddings, a lightweight MLP dual tower, FAISS retrieval, and local agent reranking on top. The LLM layer enhances search quality without replacing the retrieval system.
+      </p>
+      <div class="metric-grid mt-4">
+        <div class="metric-card">
+          <div class="metric-value">MSRD</div>
+          <div class="metric-label">Real query-to-movie relevance labels</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">FAISS</div>
+          <div class="metric-label">ANN retrieval for low-latency search</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">Ollama</div>
+          <div class="metric-label">Local query rewrite and reranking</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
-<h1>Text-to-Title Movie Retrieval System</h1>
-
-<h2>Abstract</h2>
-<p>This project turns the MSRD movie search dataset into an end-to-end query-to-movie retrieval system. A dual-tower model learns how real user search queries map to movie titles and metadata, then serves low-latency recommendations through a FAISS index and a FastAPI demo. The pipeline is designed for local development on Apple Silicon with MPS acceleration when available.</p>
-
-<a href="/demo">Try our Demo</a>
-
+<section class="row g-4 mt-1">
+  <div class="col-lg-7">
+    <div class="page-card h-100">
+      <div class="eyebrow mb-3">What It Does</div>
+      <h2 class="section-title">A retrieval stack you can actually explain in an interview.</h2>
+      <div class="feature-grid mt-4">
+        <div class="feature-card">
+          <h3 class="h5">Dual-Tower Retrieval</h3>
+          <p class="feature-copy mb-0">A trained query tower and item tower project movie search queries and movie metadata into the same retrieval space.</p>
+        </div>
+        <div class="feature-card">
+          <h3 class="h5">Cached Embeddings</h3>
+          <p class="feature-copy mb-0">Sentence-transformer outputs are cached locally, so retraining stays fast and focused on the retrieval head.</p>
+        </div>
+        <div class="feature-card">
+          <h3 class="h5">Agent Reranking</h3>
+          <p class="feature-copy mb-0">A local LangChain agent rewrites vague queries, reranks retrieved candidates, and explains why the top result fits.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="page-card h-100">
+      <div class="eyebrow mb-3">Quick Run</div>
+      <h2 class="section-title">Local-first setup</h2>
+      <p class="body-copy">
+        Train the retriever on MSRD, build a FAISS index, and optionally start a local Ollama model for the agent layer.
+      </p>
+      <pre class="mono mb-0"><code>source .venv/bin/activate
+python -m flcr.train
+env FLCR_DEVICE=cpu KMP_DUPLICATE_LIB_OK=TRUE python -m flcr.index
+ollama serve
+ollama pull qwen3:8b
+uvicorn apps.demo.app:app --reload</code></pre>
+    </div>
+  </div>
+</section>
 {% endblock %}

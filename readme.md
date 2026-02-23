@@ -4,6 +4,14 @@
 
 It maps real user-style movie queries to titles using a trained dual-tower retriever, serves candidates with FAISS, and adds an optional LangChain + Ollama layer for query rewrite, reranking, and explanation.
 
+## Highlights
+
+- **Real search task** using MSRD query-to-movie relevance judgments
+- **Dual-tower retrieval** trained in PyTorch with cached sentence embeddings
+- **Low-latency search** served through FAISS
+- **Local agent layer** powered by LangChain + Ollama for rewrite, reranking, and explanation
+- **Portfolio-friendly demo** built with FastAPI
+
 ## Why This Project Exists
 
 Most portfolio projects stop at vector search or a lightweight prompt demo. CineSeek is meant to show the full retrieval loop:
@@ -61,7 +69,7 @@ This makes the task match the product surface directly:
 
 **movie search query -> movie title**
 
-## Running It
+## Quick Start
 
 Create the environment:
 
@@ -117,7 +125,7 @@ export FLCR_AGENT_PROVIDER=openai
 export OPENAI_API_KEY=...
 ```
 
-## Repository Layout
+## Project Layout
 
 ```text
 apps/demo/          FastAPI UI

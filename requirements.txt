@@ -12,3 +12,4 @@ wandb
 langchain
 langchain-openai
 langchain-ollama
+langchain-google-genai

@@ -9,7 +9,7 @@ It maps real user-style movie queries to titles using a trained dual-tower retri
 - **Real search task** using MSRD query-to-movie relevance judgments
 - **Dual-tower retrieval** trained in PyTorch with cached sentence embeddings
 - **Low-latency search** served through FAISS
-- **Local agent layer** powered by LangChain + Ollama for rewrite, reranking, and explanation
+- **Agent layer** powered by LangChain + Gemini by default, with optional Ollama / OpenAI backends
 - **Portfolio-friendly demo** built with FastAPI
 
 ## Why This Project Exists
@@ -54,7 +54,7 @@ user query
 - **Sentence-Transformers** for cached text embeddings
 - **FAISS** for ANN retrieval
 - **FastAPI + Jinja** for the web interface
-- **LangChain + Ollama** for local agent-based rewrite / rerank / explanation
+- **LangChain + Gemini / Ollama / OpenAI** for rewrite, rerank, and explanation
 - **Weights & Biases** for training runs and checkpoint comparisons
 
 ## Dataset
@@ -97,28 +97,63 @@ uvicorn apps.demo.app:app --reload
 
 Then open [http://127.0.0.1:8000/search](http://127.0.0.1:8000/search).
 
-## Local Agent Mode
+## Docker Deployment
 
-CineSeek defaults to a **local Ollama-backed agent** for search enhancement.
+This repo includes a production-oriented Docker setup for low-cost VPS deployment. The container bakes in:
 
-Install and start Ollama:
+- the processed MSRD dataset
+- the cached sentence-transformer model
+- the selected retriever checkpoint
+- the FAISS index
+
+Build and run with Docker:
 
 ```bash
-brew install ollama
-brew services start ollama
-ollama pull qwen3:8b
+docker build -t cineseek-semantic-search .
+docker run -p 8000:8000 \
+  -e GOOGLE_API_KEY=your_gemini_api_key \
+  cineseek-semantic-search
 ```
 
-Then launch the app and keep the agent option enabled in the UI.
+Or use Docker Compose:
 
-Optional overrides:
+```bash
+cp .env.example .env
+# edit .env and set GOOGLE_API_KEY
+docker compose up -d --build
+```
+
+This setup is intentionally deployment-friendly for small CPU servers: retrieval artifacts are pre-baked into the image so the server only needs to run the app, not rebuild the dataset or retrain the model.
+
+## Agent Providers
+
+CineSeek now defaults to a **Gemini-backed agent** for query rewrite, reranking, and explanation.
+
+Set an API key:
+
+```bash
+export GOOGLE_API_KEY=...
+```
+
+or
+
+```bash
+export GEMINI_API_KEY=...
+```
+
+Default settings:
+
+```bash
+export FLCR_AGENT_PROVIDER=gemini
+export FLCR_GEMINI_MODEL=gemini-2.5-flash
+```
+
+Optional alternatives:
 
 ```bash
 export FLCR_AGENT_PROVIDER=ollama
 export FLCR_OLLAMA_MODEL=qwen3:8b
 ```
-
-If you later want a hosted provider instead:
 
 ```bash
 export FLCR_AGENT_PROVIDER=openai

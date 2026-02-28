@@ -7,12 +7,9 @@ __pycache__
 .DS_Store
 tea_debug.log
 experiments
-
 data/raw
-data/processed
-data/models
-artifacts
 
+data/processed/*
 !data/processed/msrd_items.csv
 !data/processed/msrd_metadata_embeddings.pt
 !data/processed/msrd_queries.csv
@@ -20,7 +17,8 @@ artifacts
 !data/processed/msrd_text2item_dataset.pt
 !data/processed/msrd_title_embeddings.pt
 
-!data/models/all-MiniLM-L6-v2
+data/models/*
+!data/models/all-MiniLM-L6-v2/
 !data/models/all-MiniLM-L6-v2/README.md
 !data/models/all-MiniLM-L6-v2/config.json
 !data/models/all-MiniLM-L6-v2/config_sentence_transformers.json
@@ -30,7 +28,7 @@ artifacts
 !data/models/all-MiniLM-L6-v2/tokenizer.json
 !data/models/all-MiniLM-L6-v2/tokenizer_config.json
 
-!artifacts/checkpoints
+artifacts/checkpoints/*
 !artifacts/checkpoints/msrd_text_retriever.pt
 !artifacts/checkpoints/msrd_text_retriever_latest.pt
 !artifacts/checkpoints/msrd_items.faiss

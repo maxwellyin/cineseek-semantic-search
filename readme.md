@@ -106,7 +106,16 @@ This repo includes a production-oriented Docker setup for low-cost VPS deploymen
 - the selected retriever checkpoint
 - the FAISS index
 
-Build and run with Docker:
+Pull and run from GHCR:
+
+```bash
+docker pull ghcr.io/maxwellyin/cineseek-semantic-search:latest
+docker run -p 8000:8000 \
+  -e GOOGLE_API_KEY=your_gemini_api_key \
+  ghcr.io/maxwellyin/cineseek-semantic-search:latest
+```
+
+Or build locally:
 
 ```bash
 docker build -t cineseek-semantic-search .

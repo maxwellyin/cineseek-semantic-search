@@ -17,18 +17,29 @@ docker --version
 docker compose version
 ```
 
-## 2. Clone the repository
+## 2. Fastest path: pull the prebuilt image
+
+```bash
+docker pull ghcr.io/maxwellyin/cineseek-semantic-search:latest
+```
+
+Run it:
+
+```bash
+docker run -d \
+  --name cineseek \
+  -p 8000:8000 \
+  -e GOOGLE_API_KEY=your_gemini_api_key \
+  ghcr.io/maxwellyin/cineseek-semantic-search:latest
+```
+
+## 3. Alternative: deploy from source
+
+If you prefer to build on the server:
 
 ```bash
 git clone https://github.com/maxwellyin/cineseek-semantic-search.git
 cd cineseek-semantic-search
-```
-
-## 3. Configure environment
-
-Copy the example env file:
-
-```bash
 cp .env.example .env
 ```
 
@@ -40,7 +51,7 @@ FLCR_AGENT_PROVIDER=gemini
 FLCR_GEMINI_MODEL=gemini-2.5-flash
 ```
 
-## 4. Build and start the app
+## 4. Build and start the app from source
 
 ```bash
 docker compose up -d --build

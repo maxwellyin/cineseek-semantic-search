@@ -20,13 +20,19 @@ except ImportError:  # pragma: no cover - optional dependency
     ChatOllama = None
 
 try:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+except ImportError:  # pragma: no cover - optional dependency
+    ChatGoogleGenerativeAI = None
+
+try:
     from langchain_openai import ChatOpenAI
 except ImportError:  # pragma: no cover - optional dependency
     ChatOpenAI = None
 
 
-DEFAULT_AGENT_PROVIDER = os.environ.get("FLCR_AGENT_PROVIDER", "ollama").lower()
+DEFAULT_AGENT_PROVIDER = os.environ.get("FLCR_AGENT_PROVIDER", "gemini").lower()
 DEFAULT_OLLAMA_MODEL = os.environ.get("FLCR_OLLAMA_MODEL", "qwen3:8b")
+DEFAULT_GEMINI_MODEL = os.environ.get("FLCR_GEMINI_MODEL", "gemini-2.5-flash")
 DEFAULT_OPENAI_MODEL = os.environ.get("FLCR_OPENAI_MODEL", "gpt-4.1-mini")
 DEFAULT_OLLAMA_BASE_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 
@@ -54,6 +60,8 @@ def _message_text(message: Any) -> str:
 
 
 def _provider_label() -> str:
+    if DEFAULT_AGENT_PROVIDER == "gemini":
+        return f"gemini:{DEFAULT_GEMINI_MODEL}"
     if DEFAULT_AGENT_PROVIDER == "openai":
         return f"openai:{DEFAULT_OPENAI_MODEL}"
     return f"ollama:{DEFAULT_OLLAMA_MODEL}"
@@ -62,6 +70,12 @@ def _provider_label() -> str:
 def agent_is_available() -> tuple[bool, str | None]:
     if create_agent is None or tool is None:
         return False, "LangChain is not installed."
+    if DEFAULT_AGENT_PROVIDER == "gemini":
+        if ChatGoogleGenerativeAI is None:
+            return False, "langchain-google-genai is not installed."
+        if not (os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")):
+            return False, "GOOGLE_API_KEY or GEMINI_API_KEY is not set."
+        return True, None
     if DEFAULT_AGENT_PROVIDER == "openai":
         if ChatOpenAI is None:
             return False, "langchain-openai is not installed."
@@ -74,6 +88,8 @@ def agent_is_available() -> tuple[bool, str | None]:
 
 
 def _build_llm():
+    if DEFAULT_AGENT_PROVIDER == "gemini":
+        return ChatGoogleGenerativeAI(model=DEFAULT_GEMINI_MODEL, temperature=0)
     if DEFAULT_AGENT_PROVIDER == "openai":
         return ChatOpenAI(model=DEFAULT_OPENAI_MODEL, temperature=0)
     return ChatOllama(model=DEFAULT_OLLAMA_MODEL, temperature=0, base_url=DEFAULT_OLLAMA_BASE_URL)

@@ -15,7 +15,9 @@ RUN apt-get update \
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip \
-    && pip install -r /app/requirements.txt
+    && grep -v '^torch$' /app/requirements.txt > /app/requirements.docker.txt \
+    && pip install --index-url https://download.pytorch.org/whl/cpu torch \
+    && pip install -r /app/requirements.docker.txt
 
 COPY apps /app/apps
 COPY flcr /app/flcr

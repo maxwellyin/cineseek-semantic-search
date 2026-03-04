@@ -173,7 +173,7 @@ docker compose up -d
 ### **Build Locally**
 
 ```bash
-docker build -t cineseek-semantic-search .
+docker buildx build --platform linux/amd64 -t cineseek-semantic-search .
 
 docker run -p 8000:8000 \
   --env-file .env \

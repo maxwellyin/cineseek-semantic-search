@@ -1,77 +1,103 @@
-# CineSeek
+# **CineSeek**
 
-**CineSeek** is a local-first semantic movie search project built to show a full retrieval stack, not just a chat wrapper.
+🚀 **Live Demo:** [Try CineSeek](http://139.84.197.229:8000/search)
+ 💡 Try: *“sci-fi action movies about virtual reality”*
 
-It maps real user-style movie queries to titles using a trained dual-tower retriever, serves candidates with FAISS, and adds an optional LangChain + Ollama layer for query rewrite, reranking, and explanation.
+📦 **Docker Image:** ghcr.io/maxwellyin/cineseek-semantic-search
 
-## Highlights
+------
 
+**CineSeek** is a local-first semantic movie search system designed to demonstrate a full **retrieval engineering pipeline**, not just a prompt-based demo.
+
+It maps real user-style movie queries to titles using a trained dual-tower retriever, serves candidates via FAISS, and optionally enhances results with an LLM-based agent for query rewriting, reranking, and explanation.
+
+------
+
+## **🚀 Highlights**
+
+- **End-to-end retrieval system** (training → indexing → serving → UI)
 - **Real search task** using MSRD query-to-movie relevance judgments
-- **Dual-tower retrieval** trained in PyTorch with cached sentence embeddings
-- **Low-latency search** served through FAISS
-- **Agent layer** powered by LangChain + Gemini by default, with optional Ollama / OpenAI backends
-- **Portfolio-friendly demo** built with FastAPI
+- **Dual-tower retriever** trained in PyTorch with cached embeddings
+- **Low-latency ANN search** powered by FAISS
+- **Agent layer** (LangChain + Gemini / Ollama / OpenAI)
+- **Fully containerized deployment** via Docker + GHCR
 
-## Why This Project Exists
+------
 
-Most portfolio projects stop at vector search or a lightweight prompt demo. CineSeek is meant to show the full retrieval loop:
+## **🎯 Why This Project Exists**
+
+Most portfolio projects stop at vector search or a lightweight LLM wrapper.
+
+CineSeek is built to demonstrate the **full retrieval loop**:
 
 - training on a real search relevance dataset
 - caching sentence-transformer embeddings for efficient iteration
 - learning a lightweight retrieval head with PyTorch
 - serving low-latency ANN search with FAISS
-- layering a local agent on top without replacing the retrieval system
+- layering an LLM agent **on top of retrieval (not replacing it)**
 
-The result is a project that is easy to demo, easy to extend, and still grounded in retrieval engineering.
+👉 The goal is to showcase **system design + modeling + deployment** in a single project.
 
-## What It Does
+------
+
+## **🔍 What It Does**
 
 - **Query-to-movie retrieval**
-  - The system is trained on **MSRD** (Movie Search Ranking Dataset), which contains real movie search queries and relevance labels.
+  - Trained on **MSRD (Movie Search Ranking Dataset)**
+  - Maps real user queries → relevant movie titles
 - **Dual-tower ranking**
-  - A query tower projects search-query embeddings.
-  - An item tower fuses title and metadata embeddings.
+  - Query tower encodes search intent
+  - Item tower encodes movie metadata
 - **Fast local serving**
-  - FAISS handles candidate retrieval from the movie catalog.
-- **Agent-enhanced search**
-  - A local LangChain + Ollama layer can rewrite vague queries, rerank the top candidates, and explain the result set.
+  - FAISS retrieves candidates with low latency
+- **Agent-enhanced search (optional)**
+  - Query rewriting
+  - Reranking top-k results
+  - Natural language explanation
 
-## Architecture
+------
+
+## **🏗️ Architecture**
 
 ```text
 user query
   -> sentence-transformer embedding
   -> query tower
-  -> FAISS retrieval over item tower embeddings
+  -> FAISS retrieval over item embeddings
   -> top-k candidates
-  -> optional LangChain + Ollama reranker / explainer
-  -> final result list
+  -> optional LLM agent (rewrite / rerank / explain)
+  -> final results
 ```
 
-## Tech Stack
+------
 
-- **PyTorch** for dual-tower training
-- **Sentence-Transformers** for cached text embeddings
-- **FAISS** for ANN retrieval
-- **FastAPI + Jinja** for the web interface
-- **LangChain + Gemini / Ollama / OpenAI** for rewrite, rerank, and explanation
-- **Weights & Biases** for training runs and checkpoint comparisons
+## **⚙️ Tech Stack**
 
-## Dataset
+- **PyTorch** – dual-tower training
+- **Sentence-Transformers** – embedding backbone
+- **FAISS** – ANN retrieval
+- **FastAPI + Jinja** – web interface
+- **LangChain + Gemini / Ollama / OpenAI** – agent layer
+- **Weights & Biases** – experiment tracking
+- **Docker + GHCR** – deployment
 
-The current mainline uses **MSRD**:
+------
 
-- movie metadata sourced from MovieLens and TMDB
-- 28,320 real movie search queries
-- crowd-labeled query-to-movie relevance judgments
+## **📊 Dataset**
 
-This makes the task match the product surface directly:
+Uses **MSRD (Movie Search Ranking Dataset)**:
 
-**movie search query -> movie title**
+- ~28k real movie search queries
+- crowd-labeled relevance judgments
+- movie metadata from MovieLens + TMDB
 
-## Quick Start
+👉 This aligns directly with the product task:
 
-Create the environment:
+**query → relevant movie titles**
+
+------
+
+## **⚡ Quick Start (Local)**
 
 ```bash
 python3 -m venv .venv
@@ -79,7 +105,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Prepare the retriever:
+Prepare data and train:
 
 ```bash
 python -m flcr.data_processing.download_sentence_transformer
@@ -95,95 +121,112 @@ Run the app:
 uvicorn apps.demo.app:app --reload
 ```
 
-Then open [http://127.0.0.1:8000/search](http://127.0.0.1:8000/search).
+Open:
 
-## Docker Deployment
+```
+http://127.0.0.1:8000/search
+```
 
-This repo includes a production-oriented Docker setup for low-cost VPS deployment. The container bakes in:
+------
 
-- the processed MSRD dataset
-- the cached sentence-transformer model
-- the selected retriever checkpoint
-- the FAISS index
+## **🐳 Deployment (Docker + GHCR)**
 
-Pull and run from GHCR:
+This project is **production-oriented** and can be deployed on a low-cost VPS.
+
+The container includes:
+
+- processed dataset
+- cached embeddings
+- trained checkpoint
+- FAISS index
+
+### **Pull & Run**
 
 ```bash
 docker pull ghcr.io/maxwellyin/cineseek-semantic-search:latest
-docker run -p 8000:8000 \
-  -e GOOGLE_API_KEY=your_gemini_api_key \
+
+docker run -d \
+  -p 8000:8000 \
+  --env-file .env \
   ghcr.io/maxwellyin/cineseek-semantic-search:latest
 ```
 
-Or build locally:
+Then open:
 
-```bash
-docker build -t cineseek-semantic-search .
-docker run -p 8000:8000 \
-  -e GOOGLE_API_KEY=your_gemini_api_key \
-  cineseek-semantic-search
+```
+http://<your-server-ip>:8000
 ```
 
-Or use Docker Compose:
+------
+
+### **Docker Compose (recommended)**
 
 ```bash
 cp .env.example .env
-# edit .env and set GOOGLE_API_KEY
-docker compose up -d --build
+# set GOOGLE_API_KEY
+
+docker compose up -d
 ```
 
-This setup is intentionally deployment-friendly for small CPU servers: retrieval artifacts are pre-baked into the image so the server only needs to run the app, not rebuild the dataset or retrain the model.
+------
 
-## Agent Providers
-
-CineSeek now defaults to a **Gemini-backed agent** for query rewrite, reranking, and explanation.
-
-Set an API key:
+### **Build Locally**
 
 ```bash
-export GOOGLE_API_KEY=...
+docker build -t cineseek-semantic-search .
+
+docker run -p 8000:8000 \
+  --env-file .env \
+  cineseek-semantic-search
 ```
 
-or
+------
+
+## **🔑 Environment Variables**
 
 ```bash
-export GEMINI_API_KEY=...
+GOOGLE_API_KEY=...
+FLCR_AGENT_PROVIDER=gemini
+FLCR_GEMINI_MODEL=gemini-2.5-flash
 ```
 
-Default settings:
+Optional:
 
 ```bash
-export FLCR_AGENT_PROVIDER=gemini
-export FLCR_GEMINI_MODEL=gemini-2.5-flash
+FLCR_AGENT_PROVIDER=ollama
+FLCR_OLLAMA_MODEL=qwen3:8b
+FLCR_AGENT_PROVIDER=openai
+OPENAI_API_KEY=...
 ```
 
-Optional alternatives:
+------
 
-```bash
-export FLCR_AGENT_PROVIDER=ollama
-export FLCR_OLLAMA_MODEL=qwen3:8b
-```
-
-```bash
-export FLCR_AGENT_PROVIDER=openai
-export OPENAI_API_KEY=...
-```
-
-## Project Layout
+## **📁 Project Layout**
 
 ```text
 apps/demo/          FastAPI UI
 flcr/train.py       training loop
-flcr/model.py       dual-tower retriever
+flcr/model.py       dual-tower model
 flcr/index.py       FAISS index builder
-flcr/evaluate.py    retrieval metrics
-flcr/search.py      search utilities
-flcr/agent/         LangChain agent layer
+flcr/search.py      retrieval logic
+flcr/agent/         LLM agent layer
 flcr/data_processing/
 ```
 
-## Notes
+------
 
-- This repository does **not** redistribute MSRD data.
-- Raw files are downloaded locally and processed into local caches.
-- The LLM layer is intentionally optional; the retrieval system remains the core product.
+## **🧠 Key Design Choices**
+
+- Retrieval-first system (LLM is optional, not core)
+- Cached embeddings for fast iteration
+- Lightweight dual-tower for efficiency
+- ANN retrieval for scalability
+- Containerized deployment for reproducibility
+
+------
+
+## **📝 Notes**
+
+- MSRD raw data is not redistributed
+- Data is downloaded and processed locally
+- Designed for **clarity + extensibility + deployment readiness**

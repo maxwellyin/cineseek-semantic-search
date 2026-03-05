@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import re
 
 import torch
 from sentence_transformers import SentenceTransformer
@@ -9,6 +10,54 @@ from flcr.agent.langchain_agent import agent_is_available, agent_recommend
 from flcr.config import CHECKPOINT_PATH, DATASET_PATH, DEVICE, INDEX_PATH, SENTENCE_MODEL_DIR, SENTENCE_TRANSFORMER_DEVICE
 from flcr.search import load_index, search_index
 from flcr.train import build_model
+
+
+METADATA_LABELS = ["genres", "overview", "tags", "director", "actors", "characters"]
+
+
+def parse_item_metadata(raw_text: str) -> dict[str, object]:
+    text = (raw_text or "").strip()
+    if not text:
+        return {
+            "display_title": "",
+            "release_year": "",
+            "overview": "",
+            "genres": [],
+            "tags": [],
+            "director": "",
+            "actors": [],
+            "characters": [],
+            "raw_text": "",
+        }
+
+    pattern = re.compile(r"(genres|overview|tags|director|actors|characters):")
+    matches = list(pattern.finditer(text))
+    title_part = text[: matches[0].start()].strip(" .") if matches else text
+
+    sections: dict[str, str] = {}
+    for i, match in enumerate(matches):
+        start = match.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        sections[match.group(1)] = text[start:end].strip(" .")
+
+    year_match = re.search(r"\((\d{4})\)\s*$", title_part)
+    release_year = year_match.group(1) if year_match else ""
+    display_title = title_part
+
+    def split_csv(value: str) -> list[str]:
+        return [part.strip() for part in value.split(",") if part.strip()]
+
+    return {
+        "display_title": display_title,
+        "release_year": release_year,
+        "overview": sections.get("overview", ""),
+        "genres": split_csv(sections.get("genres", "")),
+        "tags": split_csv(sections.get("tags", ""))[:8],
+        "director": sections.get("director", ""),
+        "actors": split_csv(sections.get("actors", ""))[:6],
+        "characters": split_csv(sections.get("characters", ""))[:6],
+        "raw_text": text,
+    }
 
 
 @lru_cache(maxsize=1)
@@ -43,6 +92,7 @@ def direct_recommend(raw_text: str, k: int = 12):
             {
                 "title": dataset["item_titles"][item_idx],
                 "metadata": dataset["item_metadata_texts"][item_idx],
+                "structured": parse_item_metadata(dataset["item_metadata_texts"][item_idx]),
                 "score": float(score),
             }
         )

@@ -6,20 +6,24 @@
   <div class="hero-grid">
     <div>
       <div class="eyebrow mb-3">Retrieval System</div>
-      <h1 class="display-title">Search movies by meaning, not keywords.</h1>
+      <h1 class="display-title">Search movies by meaning — not keywords.</h1>
       <p class="lede">
-        CineSeek is a local-first movie search system built for portfolio-quality retrieval work. It combines a dual-tower ranker trained on real movie search judgments, FAISS serving for low-latency candidate retrieval, and an optional LangChain + Ollama layer for query rewrite, reranking, and explanation.
+        CineSeek is a semantic movie search system that understands natural-language queries.
+        It combines embedding-based retrieval, FAISS-powered candidate search, and an optional LLM agent for reranking and explanation.
       </p>
       <div class="d-flex flex-wrap gap-3 mt-4">
         <a class="btn primary-btn" href="{{ url_for('search') }}">Try Search</a>
         <a class="ghost-link align-self-center" href="https://github.com/maxwellyin/cineseek-semantic-search" target="_blank" rel="noreferrer">View source</a>
       </div>
     </div>
+
     <div class="accent-panel">
       <div class="eyebrow text-white-50 mb-3">System Snapshot</div>
-      <h2 class="section-title text-white">Built to show retrieval engineering, not just a chat wrapper.</h2>
+      <h2 class="section-title text-white">Retrieval-first architecture, with an optional LLM agent.</h2>
       <p class="body-copy text-white-50">
-        The core path stays explicit: sentence-transformer embeddings, a lightweight MLP dual tower, FAISS retrieval, and local agent reranking on top. The LLM layer enhances search quality without replacing the retrieval system.
+        The system keeps retrieval explicit and efficient: sentence embeddings, FAISS-based nearest neighbor search,
+        and a lightweight dual-tower model. An optional LLM agent improves ranking and adds explanations,
+        without replacing the underlying retrieval pipeline.
       </p>
       <div class="metric-grid mt-4">
         <div class="metric-card">
@@ -31,8 +35,8 @@
           <div class="metric-label">ANN retrieval for low-latency search</div>
         </div>
         <div class="metric-card">
-          <div class="metric-value">Ollama</div>
-          <div class="metric-label">Local query rewrite and reranking</div>
+          <div class="metric-value">Agent</div>
+          <div class="metric-label">LLM-powered reranking, query rewriting, and explanation</div>
         </div>
       </div>
     </div>
@@ -43,36 +47,58 @@
   <div class="col-lg-7">
     <div class="page-card h-100">
       <div class="eyebrow mb-3">What It Does</div>
-      <h2 class="section-title">A retrieval stack you can actually explain in an interview.</h2>
+      <h2 class="section-title">Discover movies from natural-language descriptions.</h2>
       <div class="feature-grid mt-4">
         <div class="feature-card">
-          <h3 class="h5">Dual-Tower Retrieval</h3>
-          <p class="feature-copy mb-0">A trained query tower and item tower project movie search queries and movie metadata into the same retrieval space.</p>
+          <h3 class="h5">Semantic Search</h3>
+          <p class="feature-copy mb-0">
+            Queries and movies are mapped into a shared embedding space, enabling retrieval beyond exact keyword matches.
+          </p>
         </div>
         <div class="feature-card">
-          <h3 class="h5">Cached Embeddings</h3>
-          <p class="feature-copy mb-0">Sentence-transformer outputs are cached locally, so retraining stays fast and focused on the retrieval head.</p>
+          <h3 class="h5">Fast Retrieval</h3>
+          <p class="feature-copy mb-0">
+            FAISS enables low-latency nearest neighbor search, making the system responsive for interactive use.
+          </p>
         </div>
         <div class="feature-card">
-          <h3 class="h5">Agent Reranking</h3>
-          <p class="feature-copy mb-0">A local LangChain agent rewrites vague queries, reranks retrieved candidates, and explains why the top result fits.</p>
+          <h3 class="h5">Agent Refinement</h3>
+          <p class="feature-copy mb-0">
+            An optional LLM agent refines queries, reranks results, and provides concise explanations.
+          </p>
         </div>
       </div>
     </div>
   </div>
+
   <div class="col-lg-5">
     <div class="page-card h-100">
-      <div class="eyebrow mb-3">Quick Run</div>
-      <h2 class="section-title">Local-first setup</h2>
+      <div class="eyebrow mb-3">Live System</div>
+      <h2 class="section-title">What happens after you submit a query</h2>
       <p class="body-copy">
-        Train the retriever on MSRD, build a FAISS index, and optionally start a local Ollama model for the agent layer.
+        In the live system, queries are embedded and matched against a prebuilt FAISS index.
+        An LLM agent then refines the results through reranking and explanation.
       </p>
-      <pre class="mono mb-0"><code>source .venv/bin/activate
-python -m flcr.train
-env FLCR_DEVICE=cpu KMP_DUPLICATE_LIB_OK=TRUE python -m flcr.index
-ollama serve
-ollama pull qwen3:8b
-uvicorn apps.demo.app:app --reload</code></pre>
+      <div class="feature-grid mt-4" style="grid-template-columns: 1fr;">
+        <div class="feature-card">
+          <h3 class="h5">1. Retrieve</h3>
+          <p class="feature-copy mb-0">
+            The query is embedded and matched against a FAISS index of movie representations.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3 class="h5">2. Rerank</h3>
+          <p class="feature-copy mb-0">
+            An LLM agent reorders candidates and resolves vague or ambiguous queries.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3 class="h5">3. Explain</h3>
+          <p class="feature-copy mb-0">
+            The system provides short explanations to make results interpretable and transparent.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </section>

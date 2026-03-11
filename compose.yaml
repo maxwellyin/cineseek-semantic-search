@@ -9,4 +9,4 @@ services:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       FLCR_AGENT_PROVIDER: ${FLCR_AGENT_PROVIDER:-gemini}
-      FLCR_GEMINI_MODEL: ${FLCR_GEMINI_MODEL:-gemini-2.5-flash}
+      FLCR_GEMINI_MODEL: ${FLCR_GEMINI_MODEL:-gemini-2.5-flash-lite}

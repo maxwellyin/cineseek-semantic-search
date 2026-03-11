@@ -187,7 +187,7 @@ docker run -p 8000:8000 \
 ```bash
 GOOGLE_API_KEY=...
 FLCR_AGENT_PROVIDER=gemini
-FLCR_GEMINI_MODEL=gemini-2.5-flash
+FLCR_GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
 Optional:

@@ -48,23 +48,28 @@
     <div class="page-card h-100">
       <div class="eyebrow mb-3">What It Does</div>
       <h2 class="section-title">Discover movies from natural-language descriptions.</h2>
+      <p class="body-copy mt-3 mb-0">
+        CineSeek is built for real, fuzzy movie queries — not just exact title matches.
+        It connects natural-language intent to relevant results through semantic retrieval and optional agent-based refinement.
+      </p>
+
       <div class="feature-grid mt-4">
         <div class="feature-card">
           <h3 class="h5">Semantic Search</h3>
           <p class="feature-copy mb-0">
-            Queries and movies are mapped into a shared embedding space, enabling retrieval beyond exact keyword matches.
+            Queries and movies are mapped into a shared embedding space, so the system can retrieve relevant titles beyond exact keyword overlap.
           </p>
         </div>
         <div class="feature-card">
           <h3 class="h5">Fast Retrieval</h3>
           <p class="feature-copy mb-0">
-            FAISS enables low-latency nearest neighbor search, making the system responsive for interactive use.
+            FAISS provides low-latency nearest neighbor search, making the retrieval layer fast enough for interactive search experiences.
           </p>
         </div>
         <div class="feature-card">
           <h3 class="h5">Agent Refinement</h3>
           <p class="feature-copy mb-0">
-            An optional LLM agent refines queries, reranks results, and provides concise explanations.
+            An optional LLM agent can refine vague queries, rerank retrieved candidates, and generate short explanations for the final results.
           </p>
         </div>
       </div>
@@ -75,27 +80,24 @@
     <div class="page-card h-100">
       <div class="eyebrow mb-3">Live System</div>
       <h2 class="section-title">What happens after you submit a query</h2>
-      <p class="body-copy">
-        In the live system, queries are embedded and matched against a prebuilt FAISS index.
-        An LLM agent then refines the results through reranking and explanation.
-      </p>
+
       <div class="feature-grid mt-4" style="grid-template-columns: 1fr;">
         <div class="feature-card">
           <h3 class="h5">1. Retrieve</h3>
           <p class="feature-copy mb-0">
-            The query is embedded and matched against a FAISS index of movie representations.
+            The query is embedded and matched against a FAISS index built from movie representations.
           </p>
         </div>
         <div class="feature-card">
           <h3 class="h5">2. Rerank</h3>
           <p class="feature-copy mb-0">
-            An LLM agent reorders candidates and resolves vague or ambiguous queries.
+            An LLM agent reorders the top candidates and helps resolve vague, broad, or ambiguous descriptions.
           </p>
         </div>
         <div class="feature-card">
           <h3 class="h5">3. Explain</h3>
           <p class="feature-copy mb-0">
-            The system provides short explanations to make results interpretable and transparent.
+            The system returns short explanations so the final recommendations feel more transparent and easier to inspect.
           </p>
         </div>
       </div>

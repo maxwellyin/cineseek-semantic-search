@@ -99,6 +99,18 @@ def direct_recommend(raw_text: str, k: int = 12):
     return {"query_used": raw_text, "recommendations": recommendations}
 
 
+def format_agent_error(exc: Exception) -> str:
+    message = str(exc)
+    lowered = message.lower()
+    if "resource_exhausted" in lowered or "quota exceeded" in lowered or "429" in lowered:
+        return "Today's Gemini free quota has been used up. Showing direct retrieval results instead."
+    if "google_api_key" in lowered or "gemini_api_key" in lowered:
+        return "Gemini is not configured on this deployment. Showing direct retrieval results instead."
+    if "timed out" in lowered or "timeout" in lowered:
+        return "The agent took too long to respond. Showing direct retrieval results instead."
+    return "The agent is temporarily unavailable. Showing direct retrieval results instead."
+
+
 def recommend(raw_text: str, k: int = 12, use_agent: bool = False):
     if use_agent:
         available, reason = agent_is_available()
@@ -107,7 +119,7 @@ def recommend(raw_text: str, k: int = 12, use_agent: bool = False):
                 return agent_recommend(raw_text)
             except Exception as exc:  # pragma: no cover - defensive runtime fallback
                 fallback = direct_recommend(raw_text, k=k)
-                fallback["agent_error"] = f"Agent fallback: {exc}"
+                fallback["agent_error"] = format_agent_error(exc)
                 return fallback
         fallback = direct_recommend(raw_text, k=k)
         fallback["agent_error"] = reason

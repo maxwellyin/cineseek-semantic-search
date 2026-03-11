@@ -22,8 +22,8 @@
         {% if agent_model %}
         <div class="mini-label text-white-50 mb-2">Backend: {{ agent_model }}</div>
         {% endif %}
-        {% if agent_explanation %}
-        <p class="body-copy text-white-50 mb-0">{{ agent_explanation }}</p>
+        {% if agent_summary %}
+        <p class="body-copy text-white-50 mb-0">{{ agent_summary }}</p>
         {% endif %}
         {% if agent_error %}
         <p class="body-copy text-white-50 mb-0"><strong>Fallback:</strong> {{ agent_error }}</p>

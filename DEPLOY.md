@@ -48,7 +48,7 @@ Edit `.env` and set:
 ```bash
 GOOGLE_API_KEY=your_gemini_api_key
 FLCR_AGENT_PROVIDER=gemini
-FLCR_GEMINI_MODEL=gemini-2.5-flash
+FLCR_GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
 ## 4. Build and start the app from source

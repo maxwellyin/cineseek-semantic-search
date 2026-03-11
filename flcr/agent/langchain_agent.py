@@ -32,7 +32,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 DEFAULT_AGENT_PROVIDER = os.environ.get("FLCR_AGENT_PROVIDER", "gemini").lower()
 DEFAULT_OLLAMA_MODEL = os.environ.get("FLCR_OLLAMA_MODEL", "qwen3:8b")
-DEFAULT_GEMINI_MODEL = os.environ.get("FLCR_GEMINI_MODEL", "gemini-2.5-flash")
+DEFAULT_GEMINI_MODEL = os.environ.get("FLCR_GEMINI_MODEL", "gemini-2.5-flash-lite")
 DEFAULT_OPENAI_MODEL = os.environ.get("FLCR_OPENAI_MODEL", "gpt-4.1-mini")
 DEFAULT_OLLAMA_BASE_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 
@@ -41,7 +41,7 @@ class AgentSearchResponse(BaseModel):
     reranked_titles: list[str] = Field(
         description="Movie titles reordered from best match to weaker match using only titles returned by the search tool."
     )
-    explanation: str = Field(description="A short explanation of why the top result or top few results match the query.")
+    summary: str = Field(description="A short overall summary of the returned list that mentions the strongest matches and characterizes the rest of the list.")
 
 
 def _message_text(message: Any) -> str:
@@ -129,7 +129,9 @@ def _build_agent():
             "Always call the search_movies tool exactly once. "
             "After seeing results, reorder the returned titles from best match to weaker match. "
             "Use only titles that appear in the tool output. "
-            "Keep the explanation under 120 words."
+            "Write a short overall summary of the returned list. "
+            "The summary should describe the strongest matches, briefly characterize the list as a whole, and avoid focusing only on the top rank. "
+            "Keep the summary under 90 words."
         ),
     )
     return agent
@@ -149,13 +151,13 @@ def agent_recommend(raw_query: str) -> dict[str, Any]:
     messages = result.get("messages", [])
     final_message = messages[-1] if messages else None
     structured = result.get("structured_response")
-    explanation = ""
+    summary = ""
     reranked_titles: list[str] = []
     if structured is not None:
-        explanation = structured.explanation
+        summary = structured.summary
         reranked_titles = list(structured.reranked_titles or [])
     elif final_message is not None:
-        explanation = _message_text(final_message)
+        summary = _message_text(final_message)
 
     recommendations = _build_agent.tool_state.get("recommendations") or []
     if reranked_titles:
@@ -175,6 +177,6 @@ def agent_recommend(raw_query: str) -> dict[str, Any]:
     return {
         "query_used": query_used,
         "recommendations": recommendations,
-        "agent_explanation": explanation,
+        "agent_summary": summary,
         "agent_model": _provider_label(),
     }

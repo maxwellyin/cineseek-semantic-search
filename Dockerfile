@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     FLCR_DEVICE=cpu \
     FLCR_AGENT_PROVIDER=gemini \
-    FLCR_GEMINI_MODEL=gemini-2.5-flash
+    FLCR_GEMINI_MODEL=gemini-2.5-flash-lite
 
 WORKDIR /app
 

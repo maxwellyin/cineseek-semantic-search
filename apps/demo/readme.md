@@ -32,7 +32,7 @@ Optional agent mode:
 Default provider:
 
 - `FLCR_AGENT_PROVIDER=gemini`
-- `FLCR_GEMINI_MODEL=gemini-2.5-flash`
+- `FLCR_GEMINI_MODEL=gemini-2.5-flash-lite`
 
 Optional provider override:
 

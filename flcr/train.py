@@ -40,7 +40,7 @@ def build_model(dataset: dict) -> DualTowerRetriever:
         query_embedding_dim=dataset["query_embedding_dim"],
         sentence_embedding_dim=dataset["sentence_embedding_dim"],
         item_title_embeddings=dataset["item_title_embeddings"],
-        item_metadata_embeddings=dataset["item_metadata_embeddings"],
+        item_overview_embeddings=dataset["item_overview_embeddings"],
         hidden_dim=HIDDEN_DIM,
     ).to(DEVICE)
 

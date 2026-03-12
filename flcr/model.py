@@ -42,7 +42,7 @@ class DualTowerRetriever(nn.Module):
         query_embedding_dim: int,
         sentence_embedding_dim: int,
         item_title_embeddings: torch.Tensor,
-        item_metadata_embeddings: torch.Tensor,
+        item_overview_embeddings: torch.Tensor,
         hidden_dim: int = 128,
         dropout: float = 0.1,
     ):
@@ -59,15 +59,15 @@ class DualTowerRetriever(nn.Module):
         )
         self.item_projection = MLPProjector(hidden_dim, hidden_dim, dropout=dropout)
         self.register_buffer("item_title_embeddings", item_title_embeddings.float(), persistent=False)
-        self.register_buffer("item_metadata_embeddings", item_metadata_embeddings.float(), persistent=False)
+        self.register_buffer("item_overview_embeddings", item_overview_embeddings.float(), persistent=False)
 
     def encode_queries(self, query_embeddings: torch.Tensor) -> torch.Tensor:
         return self.query_projection(query_embeddings)
 
     def encode_item_base(self, item_ids: torch.Tensor) -> torch.Tensor:
         title_repr = self.item_title_embeddings[item_ids]
-        metadata_repr = self.item_metadata_embeddings[item_ids]
-        fused = torch.cat([title_repr, metadata_repr], dim=-1)
+        overview_repr = self.item_overview_embeddings[item_ids]
+        fused = torch.cat([title_repr, overview_repr], dim=-1)
         return self.item_fusion(fused)
 
     def encode_items(self, item_ids: torch.Tensor) -> torch.Tensor:

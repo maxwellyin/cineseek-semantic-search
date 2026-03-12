@@ -217,7 +217,7 @@ flcr/data_processing/
 
 ## **🧠 Key Design Choices**
 
-- Retrieval-first system (LLM is optional, not core)
+- Retrieval-first system (Agent as an enhancement layer)
 - Cached embeddings for fast iteration
 - Lightweight dual-tower for efficiency
 - ANN retrieval for scalability

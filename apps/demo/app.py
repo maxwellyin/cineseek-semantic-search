@@ -38,7 +38,7 @@ async def search_page(request: Request):
 @app.post("/search")
 @app.post("/demo")
 @app.post("/demo/input")
-async def search_submit(request: Request, text: str = Form(...), use_agent: str | None = Form(default="1")):
+async def search_submit(request: Request, text: str = Form(...), use_agent: str | None = Form(default=None)):
     query = urlencode({"text": text, "use_agent": "1" if use_agent else "0"})
     redirect_url = f"{request.url_for('search_outcome')}?{query}"
     return RedirectResponse(url=redirect_url, status_code=303)
@@ -46,7 +46,7 @@ async def search_submit(request: Request, text: str = Form(...), use_agent: str 
 
 @app.get("/search/results", response_class=HTMLResponse, name="search_outcome")
 @app.get("/demo/outcome", response_class=HTMLResponse)
-async def outcome(request: Request, text: str, use_agent: str = "1"):
+async def outcome(request: Request, text: str, use_agent: str = "0"):
     agent_enabled = use_agent == "1"
     result = network.recommend(text, use_agent=agent_enabled)
     return render_template(

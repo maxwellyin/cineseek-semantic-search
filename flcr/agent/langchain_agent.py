@@ -35,13 +35,23 @@ DEFAULT_OLLAMA_MODEL = os.environ.get("FLCR_OLLAMA_MODEL", "qwen3:8b")
 DEFAULT_GEMINI_MODEL = os.environ.get("FLCR_GEMINI_MODEL", "gemini-2.5-flash-lite")
 DEFAULT_OPENAI_MODEL = os.environ.get("FLCR_OPENAI_MODEL", "gpt-4.1-mini")
 DEFAULT_OLLAMA_BASE_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+DEFAULT_AGENT_CANDIDATE_K = int(os.environ.get("FLCR_AGENT_CANDIDATE_K", "30"))
+DEFAULT_AGENT_MAX_RESULTS = int(os.environ.get("FLCR_AGENT_MAX_RESULTS", "10"))
 
 
 class AgentSearchResponse(BaseModel):
-    reranked_titles: list[str] = Field(
-        description="Movie titles reordered from best match to weaker match using only titles returned by the search tool."
+    selected_titles: list[str] = Field(
+        description=(
+            "A filtered and ordered list of movie titles chosen from the tool output. "
+            "Return only the titles that should actually be shown to the user."
+        )
     )
-    summary: str = Field(description="A short overall summary of the returned list that mentions the strongest matches and characterizes the rest of the list.")
+    summary: str = Field(
+        description=(
+            "A short overall summary of the final selected list. "
+            "Mention the strongest matches and describe the list in a balanced way."
+        )
+    )
 
 
 def _message_text(message: Any) -> str:
@@ -104,17 +114,21 @@ def _build_agent():
         """Search the movie index for the user's query and return the top matches."""
         from apps.demo import network
 
-        result = network.direct_recommend(query, k=8)
+        result = network.direct_recommend(query, k=DEFAULT_AGENT_CANDIDATE_K)
         _build_agent.tool_state["query_used"] = result["query_used"]
         _build_agent.tool_state["recommendations"] = result["recommendations"]
         payload = []
         for idx, item in enumerate(result["recommendations"], start=1):
+            structured = item.get("structured") or {}
             payload.append(
                 {
                     "rank": idx,
                     "title": item["title"],
                     "score": round(float(item["score"]), 4),
-                    "metadata": item["metadata"][:400],
+                    "year": structured.get("release_year", ""),
+                    "genres": structured.get("genres", [])[:4],
+                    "overview": (structured.get("overview", "") or "")[:220],
+                    "tags": structured.get("tags", [])[:4],
                 }
             )
         return json.dumps(payload, ensure_ascii=False)
@@ -127,9 +141,13 @@ def _build_agent():
             "You help users search for movies. "
             "If the user's query is vague, rewrite it into a clearer movie search query before calling the tool. "
             "Always call the search_movies tool exactly once. "
-            "After seeing results, reorder the returned titles from best match to weaker match. "
+            "After seeing results, choose the titles that should actually be shown to the user and order them from best match to weaker match. "
             "Use only titles that appear in the tool output. "
-            "Write a short overall summary of the returned list. "
+            f"If the query looks like a precise known-item search, return only 1 to 3 titles. "
+            f"If the query is broader or exploratory, return 5 to {DEFAULT_AGENT_MAX_RESULTS} titles. "
+            f"Never return more than {DEFAULT_AGENT_MAX_RESULTS} titles. "
+            "Exclude clearly irrelevant candidates instead of keeping them just to fill space. "
+            "Write a short overall summary of the final selected list. "
             "The summary should describe the strongest matches, briefly characterize the list as a whole, and avoid focusing only on the top rank. "
             "Keep the summary under 90 words."
         ),
@@ -152,27 +170,26 @@ def agent_recommend(raw_query: str) -> dict[str, Any]:
     final_message = messages[-1] if messages else None
     structured = result.get("structured_response")
     summary = ""
-    reranked_titles: list[str] = []
+    selected_titles: list[str] = []
     if structured is not None:
         summary = structured.summary
-        reranked_titles = list(structured.reranked_titles or [])
+        selected_titles = list(structured.selected_titles or [])
     elif final_message is not None:
         summary = _message_text(final_message)
 
     recommendations = _build_agent.tool_state.get("recommendations") or []
-    if reranked_titles:
+    if selected_titles:
         title_to_items: dict[str, list[dict[str, Any]]] = {}
         for item in recommendations:
             title_to_items.setdefault(item["title"], []).append(item)
-        reranked = []
-        for title in reranked_titles:
+        selected = []
+        for title in selected_titles:
             items = title_to_items.get(title)
             if items:
-                reranked.append(items.pop(0))
-        remaining = []
-        for items in title_to_items.values():
-            remaining.extend(items)
-        recommendations = reranked + remaining
+                selected.append(items.pop(0))
+        if selected:
+            recommendations = selected
+    recommendations = recommendations[:DEFAULT_AGENT_MAX_RESULTS]
     query_used = _build_agent.tool_state.get("query_used") or raw_query
     return {
         "query_used": query_used,

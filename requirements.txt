@@ -13,3 +13,4 @@ langchain
 langchain-openai
 langchain-ollama
 langchain-google-genai
+langchain-groq

@@ -29,11 +29,17 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     ChatOpenAI = None
 
+try:
+    from langchain_groq import ChatGroq
+except ImportError:  # pragma: no cover - optional dependency
+    ChatGroq = None
 
-DEFAULT_AGENT_PROVIDER = os.environ.get("FLCR_AGENT_PROVIDER", "gemini").lower()
+
+DEFAULT_AGENT_PROVIDER = os.environ.get("FLCR_AGENT_PROVIDER", "groq").lower()
 DEFAULT_OLLAMA_MODEL = os.environ.get("FLCR_OLLAMA_MODEL", "qwen3:8b")
 DEFAULT_GEMINI_MODEL = os.environ.get("FLCR_GEMINI_MODEL", "gemini-2.5-flash-lite")
 DEFAULT_OPENAI_MODEL = os.environ.get("FLCR_OPENAI_MODEL", "gpt-4.1-mini")
+DEFAULT_GROQ_MODEL = os.environ.get("FLCR_GROQ_MODEL", "qwen/qwen3-32b")
 DEFAULT_OLLAMA_BASE_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 DEFAULT_AGENT_CANDIDATE_K = int(os.environ.get("FLCR_AGENT_CANDIDATE_K", "30"))
 DEFAULT_AGENT_MAX_RESULTS = int(os.environ.get("FLCR_AGENT_MAX_RESULTS", "10"))
@@ -74,6 +80,8 @@ def _provider_label() -> str:
         return f"gemini:{DEFAULT_GEMINI_MODEL}"
     if DEFAULT_AGENT_PROVIDER == "openai":
         return f"openai:{DEFAULT_OPENAI_MODEL}"
+    if DEFAULT_AGENT_PROVIDER == "groq":
+        return f"groq:{DEFAULT_GROQ_MODEL}"
     return f"ollama:{DEFAULT_OLLAMA_MODEL}"
 
 
@@ -92,6 +100,12 @@ def agent_is_available() -> tuple[bool, str | None]:
         if not os.environ.get("OPENAI_API_KEY"):
             return False, "OPENAI_API_KEY is not set."
         return True, None
+    if DEFAULT_AGENT_PROVIDER == "groq":
+        if ChatGroq is None:
+            return False, "langchain-groq is not installed."
+        if not os.environ.get("GROQ_API_KEY"):
+            return False, "GROQ_API_KEY is not set."
+        return True, None
     if ChatOllama is None:
         return False, "langchain-ollama is not installed."
     return True, None
@@ -102,6 +116,8 @@ def _build_llm():
         return ChatGoogleGenerativeAI(model=DEFAULT_GEMINI_MODEL, temperature=0)
     if DEFAULT_AGENT_PROVIDER == "openai":
         return ChatOpenAI(model=DEFAULT_OPENAI_MODEL, temperature=0)
+    if DEFAULT_AGENT_PROVIDER == "groq":
+        return ChatGroq(model=DEFAULT_GROQ_MODEL, temperature=0)
     return ChatOllama(model=DEFAULT_OLLAMA_MODEL, temperature=0, base_url=DEFAULT_OLLAMA_BASE_URL)
 
 

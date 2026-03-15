@@ -78,6 +78,7 @@ user query
 - **FAISS** – ANN retrieval
 - **FastAPI + Jinja** – web interface
 - **LangChain + Gemini / Ollama / OpenAI** – agent layer
+- **LangChain + Groq / Gemini / Ollama / OpenAI** – agent layer
 - **Weights & Biases** – experiment tracking
 - **Docker + GHCR** – deployment
 
@@ -185,14 +186,17 @@ docker run -p 8000:8000 \
 ## **🔑 Environment Variables**
 
 ```bash
-GOOGLE_API_KEY=...
-FLCR_AGENT_PROVIDER=gemini
-FLCR_GEMINI_MODEL=gemini-2.5-flash-lite
+GROQ_API_KEY=...
+FLCR_AGENT_PROVIDER=groq
+FLCR_GROQ_MODEL=qwen/qwen3-32b
 ```
 
 Optional:
 
 ```bash
+GOOGLE_API_KEY=...
+FLCR_AGENT_PROVIDER=gemini
+FLCR_GEMINI_MODEL=gemini-2.5-flash-lite
 FLCR_AGENT_PROVIDER=ollama
 FLCR_OLLAMA_MODEL=qwen3:8b
 FLCR_AGENT_PROVIDER=openai

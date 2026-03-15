@@ -102,10 +102,14 @@ def direct_recommend(raw_text: str, k: int = 12):
 def format_agent_error(exc: Exception) -> str:
     message = str(exc)
     lowered = message.lower()
-    if "resource_exhausted" in lowered or "quota exceeded" in lowered or "429" in lowered:
-        return "Today's Gemini free quota has been used up. Showing direct retrieval results instead."
+    if "resource_exhausted" in lowered or "quota exceeded" in lowered or "429" in lowered or "rate limit" in lowered:
+        return "The current LLM quota or rate limit has been reached. Showing direct retrieval results instead."
     if "google_api_key" in lowered or "gemini_api_key" in lowered:
         return "Gemini is not configured on this deployment. Showing direct retrieval results instead."
+    if "groq_api_key" in lowered:
+        return "Groq is not configured on this deployment. Showing direct retrieval results instead."
+    if "openai_api_key" in lowered:
+        return "OpenAI is not configured on this deployment. Showing direct retrieval results instead."
     if "timed out" in lowered or "timeout" in lowered:
         return "The agent took too long to respond. Showing direct retrieval results instead."
     return "The agent is temporarily unavailable. Showing direct retrieval results instead."

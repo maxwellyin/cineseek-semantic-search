@@ -29,7 +29,7 @@ Run it:
 docker run -d \
   --name cineseek \
   -p 8000:8000 \
-  -e GOOGLE_API_KEY=your_gemini_api_key \
+  -e GROQ_API_KEY=your_groq_api_key \
   ghcr.io/maxwellyin/cineseek-semantic-search:latest
 ```
 
@@ -44,6 +44,14 @@ cp .env.example .env
 ```
 
 Edit `.env` and set:
+
+```bash
+GROQ_API_KEY=your_groq_api_key
+FLCR_AGENT_PROVIDER=groq
+FLCR_GROQ_MODEL=qwen/qwen3-32b
+```
+
+Or use Gemini instead:
 
 ```bash
 GOOGLE_API_KEY=your_gemini_api_key
@@ -96,4 +104,5 @@ docker compose up -d --build
 
 - This image already contains the processed dataset, model cache, trained checkpoint, and FAISS index.
 - The server does **not** need to run training or preprocessing.
-- Gemini API is used for the agent layer, which is much more practical than running a local LLM on a low-cost CPU VPS.
+- Groq is the default hosted agent backend for this deployment.
+- Gemini is also supported if you prefer it over Groq.

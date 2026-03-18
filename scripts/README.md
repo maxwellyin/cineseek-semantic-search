@@ -6,3 +6,4 @@ Representative script names use descriptive verbs such as `build_`, `export_`, `
 Utility scripts for manual validation.
 
 - `demo_cases.py`: runs the exact same retrieval path used by `apps/demo` against preset or custom movie search queries so you can inspect demo-quality results from the terminal. Supports `--case`, `--query`, and `--k`.
+- `publish_docker.sh`: builds and pushes the `linux/amd64` Docker image to GHCR with `latest` and the current git SHA tags. Optional extra tags can be passed as arguments.

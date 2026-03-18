@@ -26,3 +26,4 @@ wandb/
 run*.sh
 start.sh
 *.sh
+!scripts/publish_docker.sh

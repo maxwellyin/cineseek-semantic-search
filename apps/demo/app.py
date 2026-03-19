@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
 
 try:
     from . import network
@@ -16,6 +18,18 @@ except ImportError:
 APP_DIR = Path(__file__).resolve().parent
 app = FastAPI()
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
+
+
+def render_inline_markdown(value: str | None) -> Markup:
+    escaped = escape(value or "")
+    html = str(escaped)
+    html = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", html)
+    html = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", html)
+    html = re.sub(r"`(.+?)`", r"<code>\1</code>", html)
+    return Markup(html)
+
+
+templates.env.filters["inline_markdown"] = render_inline_markdown
 
 
 def render_template(request: Request, template_name: str, **context):

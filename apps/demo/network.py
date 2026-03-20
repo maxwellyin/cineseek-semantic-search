@@ -13,8 +13,69 @@ from flcr.train import build_model
 
 
 METADATA_LABELS = ["genres", "overview", "tags", "director", "actors", "characters"]
-TITLE_STOPWORDS = {"a", "an", "and", "film", "for", "movie", "movies", "of", "the", "to"}
-EXPLORATORY_QUERY_MARKERS = {"about", "like", "similar", "recommend", "recommendation", "recommendations"}
+TITLE_STOPWORDS = {"a", "an", "and", "film", "films", "for", "movie", "movies", "of", "the", "to", "with"}
+EXPLORATORY_QUERY_MARKERS = {
+    "about",
+    "characters",
+    "featuring",
+    "from",
+    "genre",
+    "like",
+    "recommend",
+    "recommendation",
+    "recommendations",
+    "similar",
+    "superhero",
+    "superheroes",
+    "with",
+}
+DIVERSITY_QUERY_MARKERS = {
+    "characters",
+    "comic",
+    "comics",
+    "dc",
+    "featuring",
+    "franchise",
+    "marvel",
+    "superhero",
+    "superheroes",
+}
+
+FRANCHISE_BUCKET_RULES = {
+    "justice_league": ["justice league", "teen titans"],
+    "batman": ["batman", "bruce wayne", "dark knight", "gotham"],
+    "superman": ["superman", "clark kent", "krypton", "man of steel"],
+    "wonder_woman": ["wonder woman", "diana prince", "amazon princess"],
+    "aquaman": ["aquaman", "arthur curry", "atlantis"],
+    "green_lantern": ["green lantern", "hal jordan", "john stewart"],
+    "shazam": ["shazam"],
+    "flash": ["flash", "barry allen"],
+    "spider_man": ["spider man", "spider-man", "peter parker"],
+    "iron_man": ["iron man", "tony stark"],
+    "captain_america": ["captain america", "steve rogers"],
+    "thor": ["thor", "asgard"],
+    "avengers": ["avengers"],
+    "x_men": ["x men", "x-men", "wolverine", "mutant"],
+    "black_panther": ["black panther", "wakanda"],
+    "guardians": ["guardians of the galaxy", "star lord", "star-lord"],
+    "hulk": ["hulk", "bruce banner"],
+    "deadpool": ["deadpool", "wade wilson"],
+    "daredevil": ["daredevil", "matt murdock"],
+}
+DC_BUCKETS = {"aquaman", "batman", "flash", "green_lantern", "justice_league", "shazam", "superman", "wonder_woman"}
+MARVEL_BUCKETS = {
+    "avengers",
+    "black_panther",
+    "captain_america",
+    "daredevil",
+    "deadpool",
+    "guardians",
+    "hulk",
+    "iron_man",
+    "spider_man",
+    "thor",
+    "x_men",
+}
 
 
 def parse_item_metadata(raw_text: str) -> dict[str, object]:
@@ -101,8 +162,8 @@ def title_signal_weight(query: str) -> float:
     if tokens & EXPLORATORY_QUERY_MARKERS:
         return 0.0
     if len(content) <= 4:
-        return 0.25
-    return 0.06
+        return 0.18
+    return 0.0
 
 
 def rerank_with_title_signal(raw_text: str, recommendations: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -112,9 +173,62 @@ def rerank_with_title_signal(raw_text: str, recommendations: list[dict[str, obje
         lexical_score = title_match_score(raw_text, str(item["title"]))
         item["semantic_score"] = float(item["score"])
         item["title_match_score"] = lexical_score
-        item["score"] = float(item["score"]) + (lexical_weight * lexical_score)
+        effective_weight = lexical_weight if lexical_score >= 0.6 else 0.0
+        item["score"] = float(item["score"]) + (effective_weight * lexical_score)
         reranked.append(item)
     return sorted(reranked, key=lambda item: item["score"], reverse=True)
+
+
+def needs_diversity(query: str) -> bool:
+    tokens = set(normalize_title_text(query).split())
+    return bool(tokens & DIVERSITY_QUERY_MARKERS)
+
+
+def candidate_bucket(item: dict[str, object]) -> str | None:
+    structured = item.get("structured") or {}
+    parts = [
+        str(item.get("title", "")),
+        str(structured.get("overview", "")),
+        " ".join(structured.get("tags", []) or []),
+        " ".join(structured.get("genres", []) or []),
+        " ".join(structured.get("characters", []) or []),
+    ]
+    text = normalize_title_text(" ".join(parts))
+    padded_text = f" {text} "
+    for bucket, markers in FRANCHISE_BUCKET_RULES.items():
+        if any(f" {normalize_title_text(marker)} " in padded_text for marker in markers):
+            return bucket
+    return None
+
+
+def diversify_recommendations(query: str, recommendations: list[dict[str, object]], k: int) -> list[dict[str, object]]:
+    if not needs_diversity(query):
+        return recommendations[:k]
+
+    selected = []
+    delayed = []
+    bucket_counts: dict[str, int] = {}
+    query_tokens = set(normalize_title_text(query).split())
+
+    for item in recommendations:
+        bucket = candidate_bucket(item)
+        if ("dc" in query_tokens and bucket in MARVEL_BUCKETS) or ("marvel" in query_tokens and bucket in DC_BUCKETS):
+            delayed.append(item)
+            continue
+        limit = 1 if len(selected) < max(4, k // 2) else 2
+        if bucket and bucket_counts.get(bucket, 0) >= limit:
+            delayed.append(item)
+            continue
+        selected.append(item)
+        if bucket:
+            bucket_counts[bucket] = bucket_counts.get(bucket, 0) + 1
+        if len(selected) >= k:
+            break
+
+    if len(selected) < k:
+        selected.extend(delayed[: k - len(selected)])
+
+    return selected[:k]
 
 
 @lru_cache(maxsize=1)
@@ -154,7 +268,8 @@ def direct_recommend(raw_text: str, k: int = 12):
                 "score": float(score),
             }
         )
-    recommendations = rerank_with_title_signal(raw_text, recommendations)[:k]
+    recommendations = rerank_with_title_signal(raw_text, recommendations)
+    recommendations = diversify_recommendations(raw_text, recommendations, k)
     return {"query_used": raw_text, "recommendations": recommendations}
 
 

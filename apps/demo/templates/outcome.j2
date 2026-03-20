@@ -46,10 +46,6 @@
             <h2 class="result-title">{{ candidate.title }}</h2>
           </div>
 
-          <div class="mini-label mb-2">
-            Relevance score: {{ "%.4f"|format(candidate.score) }}
-          </div>
-
           {% set info = candidate.structured %}
 
           {% if info.overview %}

@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup, escape
 
@@ -18,6 +19,7 @@ except ImportError:
 APP_DIR = Path(__file__).resolve().parent
 app = FastAPI()
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
+app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 
 
 def render_inline_markdown(value: str | None) -> Markup:

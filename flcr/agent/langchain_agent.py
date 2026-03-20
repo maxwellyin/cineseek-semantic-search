@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-from functools import lru_cache
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -121,9 +120,9 @@ def _build_llm():
     return ChatOllama(model=DEFAULT_OLLAMA_MODEL, temperature=0, base_url=DEFAULT_OLLAMA_BASE_URL)
 
 
-@lru_cache(maxsize=1)
 def _build_agent():
     llm = _build_llm()
+    tool_state = {"query_used": None, "recommendations": None}
 
     @tool
     def search_movies(query: str) -> str:
@@ -131,8 +130,8 @@ def _build_agent():
         from apps.demo import network
 
         result = network.direct_recommend(query, k=DEFAULT_AGENT_CANDIDATE_K)
-        _build_agent.tool_state["query_used"] = result["query_used"]
-        _build_agent.tool_state["recommendations"] = result["recommendations"]
+        tool_state["query_used"] = result["query_used"]
+        tool_state["recommendations"] = result["recommendations"]
         payload = []
         for idx, item in enumerate(result["recommendations"], start=1):
             structured = item.get("structured") or {}
@@ -149,7 +148,7 @@ def _build_agent():
             )
         return json.dumps(payload, ensure_ascii=False)
 
-    agent = create_agent(
+    return create_agent(
         model=llm,
         tools=[search_movies],
         response_format=AgentSearchResponse,
@@ -167,11 +166,7 @@ def _build_agent():
             "The summary should describe the strongest matches, briefly characterize the list as a whole, and avoid focusing only on the top rank. "
             "Keep the summary under 90 words."
         ),
-    )
-    return agent
-
-
-_build_agent.tool_state = {"query_used": None, "recommendations": None}
+    ), tool_state
 
 
 def agent_recommend(raw_query: str) -> dict[str, Any]:
@@ -179,8 +174,7 @@ def agent_recommend(raw_query: str) -> dict[str, Any]:
     if not available:
         raise RuntimeError(reason or "Agent is unavailable.")
 
-    _build_agent.tool_state = {"query_used": None, "recommendations": None}
-    agent = _build_agent()
+    agent, tool_state = _build_agent()
     result = agent.invoke({"messages": [{"role": "user", "content": raw_query}]})
     messages = result.get("messages", [])
     final_message = messages[-1] if messages else None
@@ -193,7 +187,7 @@ def agent_recommend(raw_query: str) -> dict[str, Any]:
     elif final_message is not None:
         summary = _message_text(final_message)
 
-    recommendations = _build_agent.tool_state.get("recommendations") or []
+    recommendations = tool_state.get("recommendations") or []
     if selected_titles:
         title_to_items: dict[str, list[dict[str, Any]]] = {}
         for item in recommendations:
@@ -206,7 +200,7 @@ def agent_recommend(raw_query: str) -> dict[str, Any]:
         if selected:
             recommendations = selected
     recommendations = recommendations[:DEFAULT_AGENT_MAX_RESULTS]
-    query_used = _build_agent.tool_state.get("query_used") or raw_query
+    query_used = tool_state.get("query_used") or raw_query
     return {
         "query_used": query_used,
         "recommendations": recommendations,

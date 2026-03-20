@@ -5,7 +5,7 @@ import re
 from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup, escape
@@ -42,6 +42,13 @@ def render_template(request: Request, template_name: str, **context):
 @app.get("/home", response_class=HTMLResponse)
 async def home(request: Request):
     return render_template(request, "home.html")
+
+
+@app.get("/health")
+async def health():
+    status = network.health_status()
+    status_code = 200 if status.get("status") == "ok" else 503
+    return JSONResponse(status, status_code=status_code)
 
 
 @app.get("/search", response_class=HTMLResponse, name="search")

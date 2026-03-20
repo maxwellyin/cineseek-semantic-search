@@ -13,6 +13,8 @@ from flcr.train import build_model
 
 
 METADATA_LABELS = ["genres", "overview", "tags", "director", "actors", "characters"]
+TITLE_STOPWORDS = {"a", "an", "and", "film", "for", "movie", "movies", "of", "the", "to"}
+EXPLORATORY_QUERY_MARKERS = {"about", "like", "similar", "recommend", "recommendation", "recommendations"}
 
 
 def parse_item_metadata(raw_text: str) -> dict[str, object]:
@@ -60,6 +62,61 @@ def parse_item_metadata(raw_text: str) -> dict[str, object]:
     }
 
 
+def normalize_title_text(value: str) -> str:
+    text = re.sub(r"\(\d{4}\)\s*$", "", value or "")
+    text = re.sub(r"[^a-z0-9]+", " ", text.lower())
+    return " ".join(text.split())
+
+
+def content_tokens(value: str) -> set[str]:
+    return {token for token in normalize_title_text(value).split() if token not in TITLE_STOPWORDS and len(token) > 1}
+
+
+def title_match_score(query: str, title: str) -> float:
+    normalized_query = normalize_title_text(query)
+    normalized_title = normalize_title_text(title)
+    if not normalized_query or not normalized_title:
+        return 0.0
+    if normalized_query == normalized_title:
+        return 1.0
+    if normalized_query in normalized_title or normalized_title in normalized_query:
+        return 0.72
+
+    query_tokens = content_tokens(query)
+    title_tokens = content_tokens(title)
+    if not query_tokens or not title_tokens:
+        return 0.0
+    overlap = len(query_tokens & title_tokens)
+    if overlap == 0:
+        return 0.0
+    precision = overlap / len(query_tokens)
+    recall = overlap / len(title_tokens)
+    return 0.5 * precision + 0.5 * recall
+
+
+def title_signal_weight(query: str) -> float:
+    normalized_query = normalize_title_text(query)
+    tokens = set(normalized_query.split())
+    content = content_tokens(query)
+    if tokens & EXPLORATORY_QUERY_MARKERS:
+        return 0.0
+    if len(content) <= 4:
+        return 0.25
+    return 0.06
+
+
+def rerank_with_title_signal(raw_text: str, recommendations: list[dict[str, object]]) -> list[dict[str, object]]:
+    lexical_weight = title_signal_weight(raw_text)
+    reranked = []
+    for item in recommendations:
+        lexical_score = title_match_score(raw_text, str(item["title"]))
+        item["semantic_score"] = float(item["score"])
+        item["title_match_score"] = lexical_score
+        item["score"] = float(item["score"]) + (lexical_weight * lexical_score)
+        reranked.append(item)
+    return sorted(reranked, key=lambda item: item["score"], reverse=True)
+
+
 @lru_cache(maxsize=1)
 def load_assets():
     dataset = torch.load(DATASET_PATH, map_location="cpu")
@@ -83,7 +140,8 @@ def direct_recommend(raw_text: str, k: int = 12):
     ).to(DEVICE)
     with torch.no_grad():
         query_repr = model.encode_queries(query_embedding).cpu()
-    scores, idxes = search_index(index, query_repr, k=k)
+    search_k = min(max(k, 50), index.ntotal)
+    scores, idxes = search_index(index, query_repr, k=search_k)
 
     recommendations = []
     for score, idx in zip(scores[0].tolist(), idxes[0].tolist()):
@@ -96,7 +154,33 @@ def direct_recommend(raw_text: str, k: int = 12):
                 "score": float(score),
             }
         )
+    recommendations = rerank_with_title_signal(raw_text, recommendations)[:k]
     return {"query_used": raw_text, "recommendations": recommendations}
+
+
+def health_status() -> dict[str, object]:
+    try:
+        dataset, model, index, sentence_model = load_assets()
+        agent_available, agent_reason = agent_is_available()
+        return {
+            "status": "ok",
+            "retriever": {
+                "checkpoint": CHECKPOINT_PATH.name,
+                "dataset_items": max(len(dataset.get("item_titles", [])) - 1, 0),
+                "index_items": int(index.ntotal),
+                "device": str(DEVICE),
+                "sentence_model": str(SENTENCE_MODEL_DIR.name),
+            },
+            "agent": {
+                "available": agent_available,
+                "reason": agent_reason,
+            },
+        }
+    except Exception as exc:  # pragma: no cover - runtime diagnostic endpoint
+        return {
+            "status": "error",
+            "error": str(exc),
+        }
 
 
 def format_agent_error(exc: Exception) -> str:

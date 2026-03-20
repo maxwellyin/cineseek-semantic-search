@@ -6,6 +6,7 @@
 *.pt
 *.jpg
 *.png
+!docs/*.png
 
 .DS_Store
 tea_debug.log

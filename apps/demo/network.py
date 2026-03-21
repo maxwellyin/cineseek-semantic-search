@@ -7,9 +7,9 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 from flcr.agent.langchain_agent import agent_is_available, agent_recommend
-from flcr.config import CHECKPOINT_PATH, DATASET_PATH, DEVICE, INDEX_PATH, SENTENCE_MODEL_DIR, SENTENCE_TRANSFORMER_DEVICE
+from flcr.config import DATASET_PATH, INDEX_PATH, SENTENCE_MODEL_DIR, SENTENCE_TRANSFORMER_DEVICE
+from flcr.raw_retrieval import DEFAULT_RAW_MODE, build_raw_query_embeddings
 from flcr.search import load_index, search_index
-from flcr.train import build_model
 
 
 METADATA_LABELS = ["genres", "overview", "tags", "director", "actors", "characters"]
@@ -234,26 +234,22 @@ def diversify_recommendations(query: str, recommendations: list[dict[str, object
 @lru_cache(maxsize=1)
 def load_assets():
     dataset = torch.load(DATASET_PATH, map_location="cpu")
-    checkpoint = torch.load(CHECKPOINT_PATH, map_location=DEVICE)
-    model = build_model(dataset)
-    model.load_state_dict(checkpoint["state_dict"])
-    model.eval()
     index = load_index(INDEX_PATH)
     sentence_model = SentenceTransformer(str(SENTENCE_MODEL_DIR), device=SENTENCE_TRANSFORMER_DEVICE)
-    return dataset, model, index, sentence_model
+    return dataset, index, sentence_model
 
 
 def direct_recommend(raw_text: str, k: int = 12):
-    dataset, model, index, sentence_model = load_assets()
+    dataset, index, sentence_model = load_assets()
     query_embedding = sentence_model.encode(
         [raw_text],
         batch_size=1,
         show_progress_bar=False,
         convert_to_tensor=True,
         normalize_embeddings=False,
-    ).to(DEVICE)
+    )
     with torch.no_grad():
-        query_repr = model.encode_queries(query_embedding).cpu()
+        query_repr = build_raw_query_embeddings(query_embedding).cpu()
     search_k = min(max(k, 50), index.ntotal)
     scores, idxes = search_index(index, query_repr, k=search_k)
 
@@ -275,15 +271,15 @@ def direct_recommend(raw_text: str, k: int = 12):
 
 def health_status() -> dict[str, object]:
     try:
-        dataset, model, index, sentence_model = load_assets()
+        dataset, index, sentence_model = load_assets()
         agent_available, agent_reason = agent_is_available()
         return {
             "status": "ok",
             "retriever": {
-                "checkpoint": CHECKPOINT_PATH.name,
-                "dataset_items": max(len(dataset.get("item_titles", [])) - 1, 0),
+                "type": "raw_sentence_transformer",
+                "mode": DEFAULT_RAW_MODE,
+                "dataset_items": int(dataset.get("num_items", len(dataset.get("item_titles", {})))),
                 "index_items": int(index.ntotal),
-                "device": str(DEVICE),
                 "sentence_model": str(SENTENCE_MODEL_DIR.name),
             },
             "agent": {

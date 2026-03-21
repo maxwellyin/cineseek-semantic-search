@@ -4,7 +4,7 @@ Current status:
 
 - web framework: FastAPI
 - retrieval backend: FAISS
-- model style: dual-tower retrieval over movie search queries and movie metadata
+- model style: raw sentence-transformer retrieval over movie search queries, titles, and overviews
 - optional agent layer: LangChain + Groq / Gemini / Ollama / OpenAI for query rewrite and result explanation
 
 Run from the repository root:
@@ -13,13 +13,12 @@ Run from the repository root:
 uvicorn apps.demo.app:app --reload
 ```
 
-Before starting the app, build the dataset, train the model, and create the index:
+Before starting the app, build the dataset and create the raw embedding index:
 
 ```bash
 python -m flcr.data_processing.download_sentence_transformer
 python -m flcr.data_processing.download_msrd
 python -m flcr.data_processing.build_msrd_dataset
-python -m flcr.train
 env FLCR_DEVICE=cpu KMP_DUPLICATE_LIB_OK=TRUE python -m flcr.index
 ```
 

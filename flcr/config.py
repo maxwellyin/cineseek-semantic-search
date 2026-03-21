@@ -28,9 +28,6 @@ ITEM_TITLE_EMBEDDINGS_PATH = PROCESSED_DIR / "msrd_title_embeddings.pt"
 ITEM_METADATA_EMBEDDINGS_PATH = PROCESSED_DIR / "msrd_metadata_embeddings.pt"
 QUERY_EMBEDDINGS_PATH = PROCESSED_DIR / "msrd_query_embeddings.pt"
 
-CHECKPOINT_PATH = CHECKPOINT_DIR / "msrd_text_retriever.pt"
-LATEST_CHECKPOINT_PATH = CHECKPOINT_DIR / "msrd_text_retriever_latest.pt"
-EPOCH_CHECKPOINT_DIR = CHECKPOINT_DIR / "epochs"
 INDEX_PATH = CHECKPOINT_DIR / "msrd_items.faiss"
 INDEX_METADATA_PATH = CHECKPOINT_DIR / "msrd_index_metadata.pt"
 
@@ -42,13 +39,9 @@ MIN_QUERY_CHARS = 3
 MIN_OVERVIEW_CHARS = 20
 RANDOM_SEED = 7
 
-BATCH_SIZE = 512
-EPOCHS = 20
-LEARNING_RATE = 1e-3
-WEIGHT_DECAY = 1e-5
-HIDDEN_DIM = 128
 SENTENCE_EMBED_DIM = 384
-NUM_WORKERS = 0
+
+
 def get_device() -> torch.device:
     forced_device = os.environ.get("FLCR_DEVICE")
     if forced_device:
@@ -79,7 +72,6 @@ def ensure_directories() -> None:
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-    EPOCH_CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
 
 

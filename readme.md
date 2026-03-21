@@ -9,15 +9,15 @@
 
 **CineSeek** is a semantic movie search system designed to demonstrate a full **retrieval engineering pipeline**, not just a prompt-based demo.
 
-It maps real user-style movie queries to titles using a trained dual-tower retriever, serves candidates via FAISS, and optionally enhances results with an LLM-based agent for query rewriting, reranking, and explanation.
+It maps real user-style movie queries to titles using frozen sentence-transformer embeddings, serves candidates via FAISS, and optionally enhances results with an LLM-based agent for query rewriting, reranking, and explanation.
 
 ------
 
 ## **🚀 Highlights**
 
-- **End-to-end retrieval system** (training → indexing → serving → UI)
+- **End-to-end retrieval system** (data processing → embedding cache → indexing → serving → UI)
 - **Real search task** using MSRD query-to-movie relevance judgments
-- **Dual-tower retriever** trained in PyTorch with cached embeddings
+- **Strong raw embedding baseline** selected through controlled retrieval evaluation
 - **Low-latency ANN search** powered by FAISS
 - **Agent layer** (LangChain + Groq / Gemini / Ollama / OpenAI)
 - **Fully containerized deployment** via Docker + GHCR
@@ -34,11 +34,11 @@ It maps real user-style movie queries to titles using a trained dual-tower retri
 
 Most portfolio projects stop at vector search or a lightweight LLM wrapper.
 
-CineSeek is built to demonstrate the **full retrieval loop**:
+CineSeek is built to demonstrate the **retrieval engineering loop**:
 
-- training on a real search relevance dataset
+- auditing baselines on a real search relevance dataset
 - caching sentence-transformer embeddings for efficient iteration
-- learning a lightweight retrieval head with PyTorch
+- selecting a strong frozen embedding representation instead of overfitting a small training set
 - serving low-latency ANN search with FAISS
 - layering an LLM agent **on top of retrieval (not replacing it)**
 
@@ -49,11 +49,11 @@ CineSeek is built to demonstrate the **full retrieval loop**:
 ## **🔍 What It Does**
 
 - **Query-to-movie retrieval**
-  - Trained on **MSRD (Movie Search Ranking Dataset)**
+  - Evaluated on **MSRD (Movie Search Ranking Dataset)**
   - Maps real user queries → relevant movie titles
-- **Dual-tower ranking**
-  - Query tower encodes search intent
-  - Item tower encodes movie metadata
+- **Raw embedding ranking**
+  - Query text is encoded with a cached sentence-transformer model
+  - Movie title and overview embeddings are fused and indexed
 - **Fast local serving**
   - FAISS retrieves candidates with low latency
 - **Agent-enhanced search (optional)**
@@ -68,8 +68,8 @@ CineSeek is built to demonstrate the **full retrieval loop**:
 ```mermaid
 flowchart LR
   user["User query"] --> embed["Sentence-transformer embedding"]
-  embed --> queryTower["Query tower"]
-  queryTower --> faiss["FAISS candidate retrieval"]
+  embed --> normalize["Normalize query vector"]
+  normalize --> faiss["FAISS over title+overview embeddings"]
   faiss --> lexical["Title-aware lexical fusion"]
   lexical --> agent{"Agent enabled?"}
   agent -- "No" --> direct["Direct ranked results"]
@@ -82,12 +82,11 @@ flowchart LR
 
 ## **⚙️ Tech Stack**
 
-- **PyTorch** – dual-tower training
 - **Sentence-Transformers** – embedding backbone
+- **PyTorch** – tensor processing and offline evaluation
 - **FAISS** – ANN retrieval
 - **FastAPI + Jinja** – web interface
 - **LangChain + Groq / Gemini / Ollama / OpenAI** – agent layer
-- **Weights & Biases** – experiment tracking
 - **Docker + GHCR** – deployment
 
 ------
@@ -115,13 +114,12 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Prepare data and train:
+Prepare data and build the raw embedding index:
 
 ```bash
 python -m flcr.data_processing.download_sentence_transformer
 python -m flcr.data_processing.download_msrd
 python -m flcr.data_processing.build_msrd_dataset
-python -m flcr.train
 env FLCR_DEVICE=cpu KMP_DUPLICATE_LIB_OK=TRUE python -m flcr.index
 ```
 
@@ -153,7 +151,6 @@ The container includes:
 
 - processed dataset
 - cached embeddings
-- trained checkpoint
 - FAISS index
 
 ### **Pull & Run**
@@ -224,8 +221,7 @@ OPENAI_API_KEY=...
 
 ```text
 apps/demo/          FastAPI UI
-flcr/train.py       training loop
-flcr/model.py       dual-tower model
+flcr/raw_retrieval.py raw embedding construction
 flcr/index.py       FAISS index builder
 flcr/search.py      retrieval logic
 flcr/agent/         LLM agent layer
@@ -238,7 +234,7 @@ flcr/data_processing/
 
 - Retrieval-first system (Agent as an enhancement layer)
 - Cached embeddings for fast iteration
-- Lightweight dual-tower for efficiency
+- Strong frozen baselines before adding trainable complexity
 - ANN retrieval for scalability
 - Containerized deployment for reproducibility
 

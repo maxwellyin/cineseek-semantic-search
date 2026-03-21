@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from functools import lru_cache
 import re
 
@@ -7,7 +8,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 from flcr.agent.langchain_agent import agent_is_available, agent_recommend
-from flcr.config import DATASET_PATH, INDEX_PATH, SENTENCE_MODEL_DIR, SENTENCE_TRANSFORMER_DEVICE
+from flcr.config import DATASET_PATH, INDEX_PATH, ITEM_TABLE_PATH, SENTENCE_MODEL_DIR, SENTENCE_TRANSFORMER_DEVICE
 from flcr.raw_retrieval import DEFAULT_RAW_MODE, build_raw_query_embeddings
 from flcr.search import load_index, search_index
 
@@ -231,16 +232,29 @@ def diversify_recommendations(query: str, recommendations: list[dict[str, object
     return selected[:k]
 
 
+def load_poster_urls() -> dict[int, str]:
+    poster_urls: dict[int, str] = {}
+    with ITEM_TABLE_PATH.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            item_idx = row.get("item_idx")
+            poster_url = (row.get("poster_url") or "").strip()
+            if item_idx and poster_url:
+                poster_urls[int(item_idx)] = poster_url
+    return poster_urls
+
+
 @lru_cache(maxsize=1)
 def load_assets():
     dataset = torch.load(DATASET_PATH, map_location="cpu")
     index = load_index(INDEX_PATH)
     sentence_model = SentenceTransformer(str(SENTENCE_MODEL_DIR), device=SENTENCE_TRANSFORMER_DEVICE)
-    return dataset, index, sentence_model
+    poster_urls = load_poster_urls()
+    return dataset, index, sentence_model, poster_urls
 
 
 def direct_recommend(raw_text: str, k: int = 12):
-    dataset, index, sentence_model = load_assets()
+    dataset, index, sentence_model, poster_urls = load_assets()
     query_embedding = sentence_model.encode(
         [raw_text],
         batch_size=1,
@@ -261,6 +275,7 @@ def direct_recommend(raw_text: str, k: int = 12):
                 "title": dataset["item_titles"][item_idx],
                 "metadata": dataset["item_metadata_texts"][item_idx],
                 "structured": parse_item_metadata(dataset["item_metadata_texts"][item_idx]),
+                "poster_url": poster_urls.get(item_idx, ""),
                 "score": float(score),
             }
         )
@@ -271,7 +286,7 @@ def direct_recommend(raw_text: str, k: int = 12):
 
 def health_status() -> dict[str, object]:
     try:
-        dataset, index, sentence_model = load_assets()
+        dataset, index, sentence_model, poster_urls = load_assets()
         agent_available, agent_reason = agent_is_available()
         return {
             "status": "ok",
@@ -280,6 +295,7 @@ def health_status() -> dict[str, object]:
                 "mode": DEFAULT_RAW_MODE,
                 "dataset_items": int(dataset.get("num_items", len(dataset.get("item_titles", {})))),
                 "index_items": int(index.ntotal),
+                "poster_items": len(poster_urls),
                 "sentence_model": str(SENTENCE_MODEL_DIR.name),
             },
             "agent": {

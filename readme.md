@@ -97,6 +97,7 @@ flowchart LR
 Uses **MSRD (Movie Search Ranking Dataset)**:
 
 - ~28k real movie search queries
+- 9,691 candidate movies in the indexed retrieval corpus
 - crowd-labeled relevance judgments
 - movie metadata from MovieLens + TMDB
 

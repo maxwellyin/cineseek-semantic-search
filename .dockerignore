@@ -29,7 +29,5 @@ data/models/*
 !data/models/all-MiniLM-L6-v2/tokenizer_config.json
 
 artifacts/checkpoints/*
-!artifacts/checkpoints/msrd_text_retriever.pt
-!artifacts/checkpoints/msrd_text_retriever_latest.pt
 !artifacts/checkpoints/msrd_items.faiss
 !artifacts/checkpoints/msrd_index_metadata.pt

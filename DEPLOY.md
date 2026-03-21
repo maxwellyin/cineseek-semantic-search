@@ -102,7 +102,7 @@ docker compose up -d --build
 
 ## Notes
 
-- This image already contains the processed dataset, model cache, trained checkpoint, and FAISS index.
+- This image already contains the processed dataset, local sentence-transformer cache, and FAISS index.
 - The server does **not** need to run training or preprocessing.
 - Groq is the default hosted agent backend for this deployment.
 - Gemini is also supported if you prefer it over Groq.

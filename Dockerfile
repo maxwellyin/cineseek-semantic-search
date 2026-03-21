@@ -25,7 +25,9 @@ COPY scripts /app/scripts
 COPY readme.md /app/readme.md
 COPY data/processed /app/data/processed
 COPY data/models /app/data/models
-COPY artifacts/checkpoints /app/artifacts/checkpoints
+RUN mkdir -p /app/artifacts/checkpoints
+COPY artifacts/checkpoints/msrd_items.faiss /app/artifacts/checkpoints/msrd_items.faiss
+COPY artifacts/checkpoints/msrd_index_metadata.pt /app/artifacts/checkpoints/msrd_index_metadata.pt
 
 EXPOSE 8000
 

@@ -49,6 +49,13 @@ async def head_home():
     return Response(status_code=200)
 
 
+@app.get("/favicon.ico")
+@app.get("/apple-touch-icon.png")
+@app.get("/apple-touch-icon-precomposed.png")
+async def favicon_alias():
+    return RedirectResponse(url="/static/favicon.svg", status_code=308)
+
+
 @app.get("/health")
 async def health():
     status = network.health_status()

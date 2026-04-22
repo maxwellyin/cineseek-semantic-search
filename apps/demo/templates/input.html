@@ -12,7 +12,7 @@
         By default, an optional LLM agent further refines the results through reranking and explanation.
       </p>
 
-      <form class="search-form mt-4" action="{{ url_for('search_outcome') }}" method="GET" id="search-form">
+      <form class="search-form mt-4" action="{{ url_for('search') }}" method="POST" id="search-form">
         <label class="mini-label mb-2 d-block" for="query-box">Search query</label>
         <textarea id="query-box" name="text" class="form-control" required>futuristic sci-fi movies with AI and robots</textarea>
 
@@ -24,7 +24,7 @@
             </label>
             <div class="mini-label mt-2">Default agent backend: <span class="mono">Groq:qwen/qwen3-32b</span></div>
           </div>
-          <button type="submit" class="btn primary-btn search-submit-btn" id="search-submit">Search Movies</button>
+          <button type="submit" class="btn primary-btn" id="search-submit">Search Movies</button>
         </div>
 
         <div id="search-loading" class="result-card mt-3 d-none">
@@ -70,11 +70,9 @@
     if (!form || !submitButton || !loadingCard) return;
 
     form.addEventListener("submit", function () {
+      submitButton.disabled = true;
+      submitButton.textContent = "Searching...";
       loadingCard.classList.remove("d-none");
-      window.setTimeout(function () {
-        submitButton.disabled = true;
-        submitButton.textContent = "Searching...";
-      }, 0);
     });
   })();
 </script>

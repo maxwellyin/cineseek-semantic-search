@@ -1,6 +1,6 @@
 # **CineSeek**
 
-🚀 **Live Demo:** [Try CineSeek](http://139.84.197.229:8000/search)
+🚀 **Live Demo:** [Try CineSeek](https://cineseek.maxwellyin.com/search)
  💡 Try: *“sci-fi action movies about virtual reality”*
 
 📦 **Docker Image:** ghcr.io/maxwellyin/cineseek-semantic-search
@@ -9,7 +9,7 @@
 
 **CineSeek** is a semantic movie search system designed to demonstrate a full **retrieval engineering pipeline**, not just a prompt-based demo.
 
-It maps real user-style movie queries to titles using frozen sentence-transformer embeddings, serves candidates via FAISS, and optionally enhances results with an LLM-based agent for query rewriting, reranking, and explanation.
+It maps real user-style movie queries to titles using frozen sentence-transformer embeddings, serves candidates via FAISS, and optionally enhances results with an LLM-based agent for query rewriting, reranking, and explanation. Retrieved movies are rendered with structured metadata and poster artwork for qualitative inspection.
 
 ------
 
@@ -20,6 +20,7 @@ It maps real user-style movie queries to titles using frozen sentence-transforme
 - **Strong raw embedding baseline** selected through controlled retrieval evaluation
 - **Low-latency ANN search** powered by FAISS
 - **Agent layer** (LangChain + Groq / Gemini / Ollama / OpenAI)
+- **Poster-enhanced result UI** for easier qualitative evaluation
 - **Fully containerized deployment** via Docker + GHCR
 
 ------
@@ -60,6 +61,10 @@ CineSeek is built to demonstrate the **retrieval engineering loop**:
   - Query rewriting
   - Reranking top-k results
   - Natural language explanation
+- **Result presentation**
+  - Movie posters
+  - Plot overview
+  - Genres, director, actors, and tags
 
 ------
 
@@ -74,7 +79,7 @@ flowchart LR
   lexical --> agent{"Agent enabled?"}
   agent -- "No" --> direct["Direct ranked results"]
   agent -- "Yes" --> llm["Groq / Gemini reranking + summary"]
-  llm --> final["Final movie results"]
+  llm --> final["Poster-enhanced movie results"]
   direct --> final
 ```
 
@@ -167,8 +172,10 @@ docker run -d \
 Then open:
 
 ```
-http://<your-server-ip>:8000
+https://cineseek.maxwellyin.com
 ```
+
+In production, the Docker container serves FastAPI on port `8000` behind a reverse proxy and custom domain.
 
 ------
 
@@ -237,6 +244,18 @@ flcr/data_processing/
 - Strong frozen baselines before adding trainable complexity
 - ANN retrieval for scalability
 - Containerized deployment for reproducibility
+
+------
+
+## **🧩 Portfolio Context**
+
+CineSeek is the product-facing retrieval system in a three-part portfolio:
+
+- **CineSeek**: deployed semantic movie search with FAISS, FastAPI, Docker, and optional LLM agent reranking
+- **CineSeek-Adapters**: PyTorch ablation study for lightweight retrieval adaptation over frozen embeddings
+- **CineSeek-MM**: multimodal text-image retrieval extension using CLIP-style embeddings and offline evaluation
+
+This repo intentionally keeps the deployed demo simple and robust. Training-heavy experiments live in CineSeek-Adapters, while multimodal retrieval experiments live in CineSeek-MM.
 
 ------
 

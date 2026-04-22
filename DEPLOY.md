@@ -1,6 +1,10 @@
-# Deploying CineSeek on Vultr
+# Deploying CineSeek on a VPS
 
-This guide assumes a small Ubuntu VPS with Docker installed.
+This guide assumes a small Ubuntu VPS with Docker installed. The public deployment is served behind a custom HTTPS domain:
+
+```text
+https://cineseek.maxwellyin.com
+```
 
 ## 1. Install Docker
 
@@ -73,22 +77,28 @@ docker compose logs -f
 
 ## 5. Open the app
 
-By default the app listens on port `8000`.
+By default the container listens on port `8000`.
 
-Open:
+For local server verification:
 
 ```text
 http://YOUR_SERVER_IP:8000/search
 ```
 
+For the public deployment, put a reverse proxy such as Nginx or Caddy in front of the container and open:
+
+```text
+https://cineseek.maxwellyin.com/search
+```
+
 ## 6. Recommended firewall rules
 
-Allow:
+During direct IP testing, allow:
 
 - `22/tcp` for SSH
 - `8000/tcp` for the app
 
-If you later put Nginx in front, expose only:
+For the public domain deployment, expose only:
 
 - `80/tcp`
 - `443/tcp`

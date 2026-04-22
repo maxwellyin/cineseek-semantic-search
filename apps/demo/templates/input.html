@@ -12,7 +12,7 @@
         By default, an optional LLM agent further refines the results through reranking and explanation.
       </p>
 
-      <form class="search-form mt-4" action="{{ url_for('search') }}" method="POST" id="search-form">
+      <form class="search-form mt-4" action="/search" method="POST" id="search-form">
         <label class="mini-label mb-2 d-block" for="query-box">Search query</label>
         <textarea id="query-box" name="text" class="form-control" required>futuristic sci-fi movies with AI and robots</textarea>
 

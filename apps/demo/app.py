@@ -75,7 +75,7 @@ async def search_page(request: Request):
 @app.post("/demo/input")
 async def search_submit(request: Request, text: str = Form(...), use_agent: str | None = Form(default=None)):
     query = urlencode({"text": text, "use_agent": "1" if use_agent else "0"})
-    redirect_url = f"{request.url_for('search_outcome')}?{query}"
+    redirect_url = f"/search/results?{query}"
     return RedirectResponse(url=redirect_url, status_code=303)
 
 

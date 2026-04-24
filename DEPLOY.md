@@ -120,19 +120,15 @@ Add these GitHub Actions secrets:
 - `VPS_USERNAME`
 - `VPS_SSH_KEY`
 - `VPS_PORT` (optional, defaults to `22`)
-- `GROQ_API_KEY`
-
-Optional:
-
-- `GOOGLE_API_KEY`
-- `GEMINI_API_KEY`
 
 The pipeline then does:
 
 1. run lightweight checks
 2. build and push a `linux/amd64` image to GHCR
 3. SSH into the VPS
-4. pull the latest image and recreate the `cineseek` container
+4. run the existing server-side deploy script (`/root/cineseek_deploy.sh`)
+
+This assumes your server already has a working `.env` file that the deploy script uses for runtime secrets such as `GROQ_API_KEY`.
 
 Old GHCR image versions are pruned separately by the `Prune GHCR Images` workflow.
 

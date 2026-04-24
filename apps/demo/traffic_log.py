@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from collections import Counter
 from datetime import UTC, datetime, timedelta
+import ipaddress
+import json
 from pathlib import Path
 import sqlite3
+from urllib.error import URLError
+from urllib.request import urlopen
 
 from fastapi import Request
 
@@ -11,6 +15,7 @@ from fastapi import Request
 APP_DIR = Path(__file__).resolve().parent
 TRAFFIC_DB_PATH = APP_DIR / "traffic.sqlite3"
 RETENTION_DAYS = 7
+GEO_CACHE_DAYS = 7
 
 TRACKED_PAGE_PATHS = {"/", "/home", "/search", "/demo", "/demo/input"}
 SEARCH_PATHS = {"/search/results", "/demo/outcome"}
@@ -51,12 +56,23 @@ def ensure_db() -> None:
         )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_traffic_events_created_at ON traffic_events(created_at)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_traffic_events_type ON traffic_events(event_type)")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS ip_geolocation_cache (
+                ip TEXT PRIMARY KEY,
+                location_text TEXT,
+                fetched_at TEXT NOT NULL
+            )
+            """
+        )
 
 
 def cleanup_old_events() -> None:
     cutoff = (datetime.now(UTC) - timedelta(days=RETENTION_DAYS)).isoformat()
+    geo_cutoff = (datetime.now(UTC) - timedelta(days=GEO_CACHE_DAYS)).isoformat()
     with _connect() as conn:
         conn.execute("DELETE FROM traffic_events WHERE created_at < ?", (cutoff,))
+        conn.execute("DELETE FROM ip_geolocation_cache WHERE fetched_at < ?", (geo_cutoff,))
 
 
 def _client_ip(request: Request) -> str:
@@ -64,6 +80,73 @@ def _client_ip(request: Request) -> str:
     if forwarded:
         return forwarded
     return request.client.host if request.client else ""
+
+
+def _is_public_ip(value: str) -> bool:
+    if not value:
+        return False
+    try:
+        ip_obj = ipaddress.ip_address(value)
+    except ValueError:
+        return False
+    return not (
+        ip_obj.is_private
+        or ip_obj.is_loopback
+        or ip_obj.is_reserved
+        or ip_obj.is_multicast
+        or ip_obj.is_unspecified
+        or ip_obj.is_link_local
+    )
+
+
+def _fetch_geolocation(ip: str) -> str | None:
+    if not _is_public_ip(ip):
+        return "Local / private"
+
+    url = f"http://ip-api.com/json/{ip}?fields=status,country,regionName,city"
+    try:
+        with urlopen(url, timeout=2.0) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (URLError, TimeoutError, OSError, json.JSONDecodeError):
+        return None
+
+    if payload.get("status") != "success":
+        return None
+
+    parts = [payload.get("city"), payload.get("regionName"), payload.get("country")]
+    location = ", ".join(part for part in parts if part)
+    return location or None
+
+
+def _cached_geolocation(ip: str) -> str | None:
+    if not ip:
+        return None
+
+    cutoff = (datetime.now(UTC) - timedelta(days=GEO_CACHE_DAYS)).isoformat()
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT location_text, fetched_at FROM ip_geolocation_cache WHERE ip = ?",
+            (ip,),
+        ).fetchone()
+        if row and row["fetched_at"] >= cutoff:
+            return row["location_text"]
+
+    location = _fetch_geolocation(ip)
+    if location is None:
+        return None
+
+    with _connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO ip_geolocation_cache (ip, location_text, fetched_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(ip) DO UPDATE SET
+                location_text = excluded.location_text,
+                fetched_at = excluded.fetched_at
+            """,
+            (ip, location, datetime.now(UTC).isoformat()),
+        )
+    return location
 
 
 def should_track(request: Request) -> bool:
@@ -165,6 +248,10 @@ def fetch_dashboard(limit: int = 100) -> dict[str, object]:
 
     top_queries = Counter(row["query_text"] for row in top_queries_raw).most_common(12)
     recent_events = [dict(row) for row in rows]
+    unique_ips = {event["client_ip"] for event in recent_events if event.get("client_ip")}
+    location_by_ip = {ip: _cached_geolocation(ip) for ip in unique_ips}
+    for event in recent_events:
+        event["location"] = location_by_ip.get(event.get("client_ip", ""))
     return {
         "summary": {
             "last_24h_visits": int(total_last_day),

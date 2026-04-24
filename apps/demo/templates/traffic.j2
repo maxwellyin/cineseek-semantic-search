@@ -57,6 +57,8 @@
                 <th>Type</th>
                 <th>Path</th>
                 <th>Query</th>
+                <th>IP</th>
+                <th>Region</th>
                 <th>Agent</th>
                 <th>Status</th>
               </tr>
@@ -68,6 +70,8 @@
                 <td class="mini-label">{{ event.event_type }}</td>
                 <td class="mini-label">{{ event.path }}</td>
                 <td class="mini-label">{{ event.query_text or "—" }}</td>
+                <td class="mini-label">{{ event.client_ip or "—" }}</td>
+                <td class="mini-label">{{ event.location or "—" }}</td>
                 <td class="mini-label">
                   {% if event.use_agent is none %}
                     —

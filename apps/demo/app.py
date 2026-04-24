@@ -20,6 +20,7 @@ except ImportError:
 
 
 APP_DIR = Path(__file__).resolve().parent
+DEFAULT_HOME_QUERY = "Mind-bending movies like Inception but darker"
 app = FastAPI()
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
@@ -95,8 +96,9 @@ async def search_page(request: Request):
 @app.post("/search")
 @app.post("/demo")
 @app.post("/demo/input")
-async def search_submit(request: Request, text: str = Form(...), use_agent: str | None = Form(default=None)):
-    query = urlencode({"text": text, "use_agent": "1" if use_agent else "0"})
+async def search_submit(request: Request, text: str = Form(default=""), use_agent: str | None = Form(default=None)):
+    normalized_text = (text or "").strip() or DEFAULT_HOME_QUERY
+    query = urlencode({"text": normalized_text, "use_agent": "1" if use_agent else "0"})
     redirect_url = f"/search/results?{query}"
     return RedirectResponse(url=redirect_url, status_code=303)
 

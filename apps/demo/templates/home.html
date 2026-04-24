@@ -5,38 +5,67 @@
 <section class="page-card">
   <div class="hero-grid">
     <div>
-      <div class="eyebrow mb-3">Retrieval System</div>
-      <h1 class="display-title">Search movies by meaning — not keywords.</h1>
+      <div class="eyebrow mb-3">Semantic Retrieval Demo</div>
+      <h1 class="display-title" style="max-width: 12ch;">CineSeek — LLM-powered semantic movie search.</h1>
       <p class="lede">
-        CineSeek is a semantic movie search system that understands natural-language queries.
-        It combines embedding-based retrieval, FAISS-powered candidate search, and an optional LLM agent for reranking and explanation.
+        Search movies using natural language, not keywords. CineSeek combines dense retrieval, FAISS candidate search,
+        and LLM reranking to better match user intent on fuzzy movie queries.
       </p>
-      <div class="d-flex flex-wrap gap-3 mt-4">
-        <a class="btn primary-btn" href="/search">Try Search</a>
-        <a class="ghost-link align-self-center" href="https://github.com/maxwellyin/cineseek-semantic-search" target="_blank" rel="noreferrer">View source</a>
-      </div>
+
+      <form class="search-form mt-4" action="/search" method="POST" id="home-search-form">
+        <label class="mini-label mb-2 d-block" for="home-query-box">Try a query</label>
+        <textarea id="home-query-box" name="text" class="form-control" required placeholder='Try: "Mind-bending movies like Inception but darker"'></textarea>
+
+        <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mt-3">
+          <div>
+            <label class="mini-label d-flex align-items-center gap-2">
+              <input type="checkbox" name="use_agent" value="1" checked>
+              Use LLM agent for reranking and explanation
+            </label>
+            <div class="mini-label mt-2">Results are powered by semantic retrieval + LLM reranking.</div>
+          </div>
+          <button type="submit" class="btn primary-btn" id="home-search-submit">Search Now</button>
+        </div>
+
+        <div class="mt-4">
+          <div class="mini-label mb-2">Try one of these</div>
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary query-chip" data-query="Mind-bending movies like Inception but darker">Mind-bending movies like Inception but darker</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary query-chip" data-query="Emotional sci-fi like Interstellar">Emotional sci-fi like Interstellar</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary query-chip" data-query="Underrated psychological thrillers">Underrated psychological thrillers</button>
+          </div>
+        </div>
+
+        <div id="home-search-loading" class="result-card mt-3 d-none">
+          <div class="d-flex align-items-center gap-3">
+            <div class="spinner-border spinner-border-sm" style="color: var(--accent);" role="status" aria-hidden="true"></div>
+            <div>
+              <div class="mini-label mb-1">Working</div>
+              <div class="body-copy mb-0">Please wait while CineSeek retrieves candidates, reranks them, and prepares the final results.</div>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
 
     <div class="accent-panel">
-      <div class="eyebrow text-white-50 mb-3">System Snapshot</div>
-      <h2 class="section-title text-white">Retrieval-first architecture, with an optional LLM agent.</h2>
+      <div class="eyebrow text-white-50 mb-3">For Recruiters</div>
+      <h2 class="section-title text-white">An ML systems project, not just a movie site.</h2>
       <p class="body-copy text-white-50">
-        The system keeps retrieval explicit and efficient: sentence embeddings, FAISS-based nearest neighbor search,
-        and a strong frozen embedding baseline selected through evaluation. An optional LLM agent improves ranking and adds explanations,
-        without replacing the underlying retrieval pipeline.
+        CineSeek demonstrates query understanding, dense retrieval, FAISS-based serving, and LLM reranking in a single deployable search stack.
       </p>
       <div class="metric-grid mt-4">
         <div class="metric-card">
-          <div class="metric-value">MSRD</div>
-          <div class="metric-label">Real query-to-movie relevance labels</div>
+          <div class="metric-value">~28k</div>
+          <div class="metric-label">Real movie search queries from MSRD</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">9,691</div>
+          <div class="metric-label">Indexed candidate movies in the retrieval corpus</div>
         </div>
         <div class="metric-card">
           <div class="metric-value">FAISS</div>
-          <div class="metric-label">ANN retrieval for low-latency search</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-value">Agent</div>
-          <div class="metric-label">LLM-powered reranking, query rewriting, and explanation</div>
+          <div class="metric-label">Low-latency ANN retrieval with optional LLM reranking</div>
         </div>
       </div>
     </div>
@@ -46,30 +75,25 @@
 <section class="row g-4 mt-1">
   <div class="col-lg-7">
     <div class="page-card h-100">
-      <div class="eyebrow mb-3">What It Does</div>
-      <h2 class="section-title">Discover movies from natural-language descriptions.</h2>
-      <p class="body-copy mt-3 mb-0">
-        CineSeek is built for real, fuzzy movie queries — not just exact title matches.
-        It connects natural-language intent to relevant results through semantic retrieval and optional agent-based refinement.
-      </p>
-
+      <div class="eyebrow mb-3">What It Demonstrates</div>
+      <h2 class="section-title">A retrieval-first search stack with an optional agent layer.</h2>
       <div class="feature-grid mt-4">
         <div class="feature-card">
-          <h3 class="h5">Semantic Search</h3>
+          <h3 class="h5">Dense Retrieval</h3>
           <p class="feature-copy mb-0">
-            Queries and movies are mapped into a shared embedding space, so the system can retrieve relevant titles beyond exact keyword overlap.
+            Queries and movies are mapped into a shared representation space so results can match meaning, not just keyword overlap.
           </p>
         </div>
         <div class="feature-card">
-          <h3 class="h5">Fast Retrieval</h3>
+          <h3 class="h5">Candidate Search</h3>
           <p class="feature-copy mb-0">
-            FAISS provides low-latency nearest neighbor search, making the retrieval layer fast enough for interactive search experiences.
+            FAISS provides low-latency nearest-neighbor retrieval over a movie corpus built from MovieLens and TMDB metadata.
           </p>
         </div>
         <div class="feature-card">
-          <h3 class="h5">Agent Refinement</h3>
+          <h3 class="h5">LLM Reranking</h3>
           <p class="feature-copy mb-0">
-            An optional LLM agent can refine vague queries, rerank retrieved candidates, and generate short explanations for the final results.
+            A configurable agent layer can rewrite vague queries, rerank candidates, and summarize the final result list.
           </p>
         </div>
       </div>
@@ -78,30 +102,48 @@
 
   <div class="col-lg-5">
     <div class="page-card h-100">
-      <div class="eyebrow mb-3">Live System</div>
-      <h2 class="section-title">What happens after you submit a query</h2>
-
+      <div class="eyebrow mb-3">System Flow</div>
+      <h2 class="section-title">What happens after you search</h2>
       <div class="feature-grid mt-4" style="grid-template-columns: 1fr;">
         <div class="feature-card">
           <h3 class="h5">1. Retrieve</h3>
-          <p class="feature-copy mb-0">
-            The query is embedded and matched against a FAISS index built from movie representations.
-          </p>
+          <p class="feature-copy mb-0">The query is embedded and matched against a FAISS index of movie representations.</p>
         </div>
         <div class="feature-card">
           <h3 class="h5">2. Rerank</h3>
-          <p class="feature-copy mb-0">
-            An LLM agent reorders the top candidates and helps resolve vague, broad, or ambiguous descriptions.
-          </p>
+          <p class="feature-copy mb-0">The agent reviews a broader candidate set, improves ordering, and filters obviously weak matches.</p>
         </div>
         <div class="feature-card">
           <h3 class="h5">3. Explain</h3>
-          <p class="feature-copy mb-0">
-            The system returns short explanations so the final recommendations feel more transparent and easier to inspect.
-          </p>
+          <p class="feature-copy mb-0">The final page includes a short summary so the result list feels inspectable rather than opaque.</p>
         </div>
       </div>
     </div>
   </div>
 </section>
+
+<script>
+  (function () {
+    const textarea = document.getElementById("home-query-box");
+    const chips = document.querySelectorAll(".query-chip");
+    const form = document.getElementById("home-search-form");
+    const submitButton = document.getElementById("home-search-submit");
+    const loadingCard = document.getElementById("home-search-loading");
+
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        if (!textarea) return;
+        textarea.value = chip.dataset.query || "";
+        textarea.focus();
+      });
+    });
+
+    if (!form || !submitButton || !loadingCard) return;
+    form.addEventListener("submit", function () {
+      submitButton.disabled = true;
+      submitButton.textContent = "Searching...";
+      loadingCard.classList.remove("d-none");
+    });
+  })();
+</script>
 {% endblock %}

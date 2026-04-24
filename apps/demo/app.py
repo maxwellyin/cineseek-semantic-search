@@ -13,8 +13,10 @@ from starlette.concurrency import run_in_threadpool
 
 try:
     from . import network
+    from . import traffic_log
 except ImportError:
     import network
+    import traffic_log
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -37,6 +39,13 @@ templates.env.filters["inline_markdown"] = render_inline_markdown
 
 def render_template(request: Request, template_name: str, **context):
     return templates.TemplateResponse(request, template_name, context)
+
+
+@app.middleware("http")
+async def traffic_middleware(request: Request, call_next):
+    response = await call_next(request)
+    await run_in_threadpool(traffic_log.record_request, request, response.status_code)
+    return response
 
 
 @app.get("/", response_class=HTMLResponse, name="home")
@@ -62,6 +71,18 @@ async def health():
     status = await run_in_threadpool(network.health_status)
     status_code = 200 if status.get("status") == "ok" else 503
     return JSONResponse(status, status_code=status_code)
+
+
+@app.get("/ops/traffic", response_class=HTMLResponse)
+async def traffic_dashboard(request: Request):
+    dashboard = await run_in_threadpool(traffic_log.fetch_dashboard)
+    return render_template(
+        request,
+        "traffic.j2",
+        summary=dashboard["summary"],
+        top_queries=dashboard["top_queries"],
+        recent_events=dashboard["recent_events"],
+    )
 
 
 @app.get("/search", response_class=HTMLResponse, name="search")

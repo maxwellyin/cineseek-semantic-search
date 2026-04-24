@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}CineSeek Traffic{% endblock %}
+
+{% block content %}
+<section class="page-card">
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <div class="eyebrow mb-2">Internal Dashboard</div>
+      <h1 class="section-title mb-2">Traffic and Search Activity</h1>
+      <p class="body-copy mb-0">Retains the most recent seven days of traffic. Visit counts are based on unique client IPs, while raw search requests are logged individually. Older records are pruned automatically.</p>
+    </div>
+    <a class="ghost-link" href="/search">Back to search</a>
+  </div>
+
+  <div class="metric-grid mb-4">
+    <div class="metric-card">
+      <div class="metric-value">{{ summary.last_24h_visits }}</div>
+      <div class="metric-label">Unique IP visits in the last 24 hours</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">{{ summary.last_7d_visits }}</div>
+      <div class="metric-label">Unique IP visits in the last 7 days</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">{{ summary.last_7d_searches }}</div>
+      <div class="metric-label">Searches in the last 7 days</div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="result-card h-100">
+        <div class="eyebrow mb-3">Top Queries</div>
+        {% if top_queries %}
+        <div class="d-grid gap-3">
+          {% for item in top_queries %}
+          <div>
+            <div class="body-copy mb-1">{{ item.query }}</div>
+            <div class="mini-label">{{ item.count }} searches</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="body-copy mb-0">No search activity recorded yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="result-card">
+        <div class="eyebrow mb-3">Recent Events</div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Type</th>
+                <th>Path</th>
+                <th>Query</th>
+                <th>Agent</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for event in recent_events %}
+              <tr>
+                <td class="mini-label">{{ event.created_at }}</td>
+                <td class="mini-label">{{ event.event_type }}</td>
+                <td class="mini-label">{{ event.path }}</td>
+                <td class="mini-label">{{ event.query_text or "—" }}</td>
+                <td class="mini-label">
+                  {% if event.use_agent is none %}
+                    —
+                  {% elif event.use_agent %}
+                    on
+                  {% else %}
+                    off
+                  {% endif %}
+                </td>
+                <td class="mini-label">{{ event.status_code }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -6,6 +6,9 @@ __pycache__
 **/__pycache__
 .DS_Store
 tea_debug.log
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
 experiments
 data/raw
 

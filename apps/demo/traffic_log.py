@@ -118,6 +118,27 @@ def _fetch_geolocation(ip: str) -> str | None:
     return location or None
 
 
+def _masked_ip(ip: str) -> str:
+    if not ip:
+        return ""
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip
+
+    if ip_obj.version == 4:
+        parts = ip.split(".")
+        if len(parts) == 4:
+            return ".".join(parts[:3] + ["xxx"])
+        return ip
+
+    if ip_obj.version == 6:
+        parts = ip.split(":")
+        return ":".join(parts[:4]) + ":xxxx:xxxx:xxxx:xxxx"
+
+    return ip
+
+
 def _cached_geolocation(ip: str) -> str | None:
     if not ip:
         return None
@@ -251,6 +272,7 @@ def fetch_dashboard(limit: int = 100) -> dict[str, object]:
     unique_ips = {event["client_ip"] for event in recent_events if event.get("client_ip")}
     location_by_ip = {ip: _cached_geolocation(ip) for ip in unique_ips}
     for event in recent_events:
+        event["display_ip"] = _masked_ip(event.get("client_ip", ""))
         event["location"] = location_by_ip.get(event.get("client_ip", ""))
     return {
         "summary": {

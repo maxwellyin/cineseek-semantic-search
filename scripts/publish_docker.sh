@@ -17,6 +17,7 @@ Builds and pushes the CineSeek Docker image to GHCR with:
   - latest
   - current git SHA
   - any optional extra tags you pass
+Publishes only the requested target platform and disables extra provenance/SBOM manifests.
 
 Environment overrides:
   IMAGE_NAME   Default: ghcr.io/maxwellyin/cineseek-semantic-search
@@ -53,6 +54,8 @@ echo "  tags:     latest ${GIT_SHA}${*:+ $*}"
 
 docker buildx build \
   --platform "${PLATFORM}" \
+  --provenance=false \
+  --sbom=false \
   "${TAGS[@]}" \
   --push \
   .

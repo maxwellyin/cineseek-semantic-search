@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup, escape
+from starlette.concurrency import run_in_threadpool
 
 try:
     from . import network
@@ -58,7 +59,7 @@ async def favicon_alias():
 
 @app.get("/health")
 async def health():
-    status = network.health_status()
+    status = await run_in_threadpool(network.health_status)
     status_code = 200 if status.get("status") == "ok" else 503
     return JSONResponse(status, status_code=status_code)
 
@@ -83,7 +84,7 @@ async def search_submit(request: Request, text: str = Form(...), use_agent: str 
 @app.get("/demo/outcome", response_class=HTMLResponse)
 async def outcome(request: Request, text: str, use_agent: str = "0"):
     agent_enabled = use_agent == "1"
-    result = network.recommend(text, use_agent=agent_enabled)
+    result = await run_in_threadpool(network.recommend, text, 12, agent_enabled)
     return render_template(
         request,
         "outcome.j2",

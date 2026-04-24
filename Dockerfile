@@ -1,3 +1,6 @@
+ARG ASSET_IMAGE=ghcr.io/maxwellyin/cineseek-semantic-search:latest
+FROM ${ASSET_IMAGE} AS asset_source
+
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -23,11 +26,11 @@ COPY apps /app/apps
 COPY flcr /app/flcr
 COPY scripts /app/scripts
 COPY readme.md /app/readme.md
-COPY data/processed /app/data/processed
-COPY data/models /app/data/models
 RUN mkdir -p /app/artifacts/checkpoints
-COPY artifacts/checkpoints/msrd_items.faiss /app/artifacts/checkpoints/msrd_items.faiss
-COPY artifacts/checkpoints/msrd_index_metadata.pt /app/artifacts/checkpoints/msrd_index_metadata.pt
+COPY --from=asset_source /app/data/processed /app/data/processed
+COPY --from=asset_source /app/data/models /app/data/models
+COPY --from=asset_source /app/artifacts/checkpoints/msrd_items.faiss /app/artifacts/checkpoints/msrd_items.faiss
+COPY --from=asset_source /app/artifacts/checkpoints/msrd_index_metadata.pt /app/artifacts/checkpoints/msrd_index_metadata.pt
 
 EXPOSE 8000
 

@@ -110,6 +110,32 @@ git pull
 docker compose up -d --build
 ```
 
+## 8. Optional GitHub Actions CI/CD
+
+This repository can also deploy automatically after every push to `main`.
+
+Add these GitHub Actions secrets:
+
+- `VPS_HOST`
+- `VPS_USERNAME`
+- `VPS_SSH_KEY`
+- `VPS_PORT` (optional, defaults to `22`)
+- `GROQ_API_KEY`
+
+Optional:
+
+- `GOOGLE_API_KEY`
+- `GEMINI_API_KEY`
+
+The pipeline then does:
+
+1. run lightweight checks
+2. build and push a `linux/amd64` image to GHCR
+3. SSH into the VPS
+4. pull the latest image and recreate the `cineseek` container
+
+Old GHCR image versions are pruned separately by the `Prune GHCR Images` workflow.
+
 ## Notes
 
 - This image already contains the processed dataset, local sentence-transformer cache, and FAISS index.

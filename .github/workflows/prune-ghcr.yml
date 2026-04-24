@@ -7,17 +7,20 @@ on:
         description: Number of most recent GHCR versions to keep
         required: false
         default: "15"
-  push:
-    branches:
-      - main
   schedule:
     - cron: "17 3 * * *"
+  workflow_run:
+    workflows:
+      - CI/CD
+    types:
+      - completed
 
 permissions:
   packages: write
 
 jobs:
   prune:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     steps:
       - name: Prune old GHCR versions

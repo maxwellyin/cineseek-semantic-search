@@ -76,6 +76,11 @@ def cleanup_old_events() -> None:
 
 
 def _client_ip(request: Request) -> str:
+    for header_name in ("cf-connecting-ip", "true-client-ip", "x-real-ip"):
+        candidate = request.headers.get(header_name, "").strip()
+        if candidate:
+            return candidate
+
     forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
     if forwarded:
         return forwarded

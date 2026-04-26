@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import re
 from urllib.parse import urlencode
@@ -13,17 +14,23 @@ from starlette.concurrency import run_in_threadpool
 
 try:
     from . import network
+    from . import search_mcp_server
     from . import traffic_log
 except ImportError:
     import network
+    import search_mcp_server
     import traffic_log
 
 
 APP_DIR = Path(__file__).resolve().parent
 DEFAULT_HOME_QUERY = "Mind-bending movies like Inception but darker"
-app = FastAPI()
+PUBLIC_MCP_PREFIX = "/mcp/search"
+PUBLIC_MCP_BEARER_TOKEN = os.environ.get("FLCR_PUBLIC_MCP_BEARER_TOKEN", "").strip()
+app = FastAPI(lifespan=search_mcp_server.mcp_app.lifespan)
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
+app.mount("/agent-tools", search_mcp_server.mcp_app)
+app.mount(PUBLIC_MCP_PREFIX, search_mcp_server.mcp_app)
 
 
 def render_inline_markdown(value: str | None) -> Markup:
@@ -40,6 +47,23 @@ templates.env.filters["inline_markdown"] = render_inline_markdown
 
 def render_template(request: Request, template_name: str, **context):
     return templates.TemplateResponse(request, template_name, context)
+
+
+@app.middleware("http")
+async def mcp_auth_middleware(request: Request, call_next):
+    if request.url.path.startswith(PUBLIC_MCP_PREFIX):
+        auth_header = request.headers.get("authorization", "").strip()
+        expected = f"Bearer {PUBLIC_MCP_BEARER_TOKEN}" if PUBLIC_MCP_BEARER_TOKEN else ""
+        if not expected or auth_header != expected:
+            return JSONResponse(
+                {
+                    "error": "Unauthorized",
+                    "detail": "Provide a valid Bearer token to access the public MCP endpoint.",
+                },
+                status_code=401,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -107,7 +131,8 @@ async def search_submit(request: Request, text: str = Form(default=""), use_agen
 @app.get("/demo/outcome", response_class=HTMLResponse)
 async def outcome(request: Request, text: str, use_agent: str = "0"):
     agent_enabled = use_agent == "1"
-    result = await run_in_threadpool(network.recommend, text, 12, agent_enabled)
+    mcp_server_url = f"{request.base_url}agent-tools/mcp".rstrip("/")
+    result = await run_in_threadpool(network.recommend, text, 12, agent_enabled, mcp_server_url)
     return render_template(
         request,
         "outcome.j2",

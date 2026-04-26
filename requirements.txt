@@ -9,7 +9,9 @@ jinja2
 python-multipart
 sentence-transformers
 langchain
+langchain-mcp-adapters
 langchain-openai
 langchain-ollama
 langchain-google-genai
 langchain-groq
+fastmcp

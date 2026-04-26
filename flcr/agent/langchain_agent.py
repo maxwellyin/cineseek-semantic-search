@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import importlib.util
 import json
 import os
 from typing import Any
@@ -8,10 +10,13 @@ from pydantic import BaseModel, Field
 
 try:
     from langchain.agents import create_agent
-    from langchain.tools import tool
 except ImportError:  # pragma: no cover - optional dependency
     create_agent = None
-    tool = None
+
+try:
+    from langchain_mcp_adapters.client import MultiServerMCPClient
+except ImportError:  # pragma: no cover - optional dependency
+    MultiServerMCPClient = None
 
 try:
     from langchain_ollama import ChatOllama
@@ -42,6 +47,7 @@ DEFAULT_GROQ_MODEL = os.environ.get("FLCR_GROQ_MODEL", "qwen/qwen3-32b")
 DEFAULT_OLLAMA_BASE_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
 DEFAULT_AGENT_CANDIDATE_K = int(os.environ.get("FLCR_AGENT_CANDIDATE_K", "30"))
 DEFAULT_AGENT_MAX_RESULTS = int(os.environ.get("FLCR_AGENT_MAX_RESULTS", "10"))
+DEFAULT_MCP_SERVER_URL = os.environ.get("FLCR_MCP_SERVER_URL", "http://127.0.0.1:8000/agent-tools/mcp")
 
 
 class AgentSearchResponse(BaseModel):
@@ -57,6 +63,10 @@ class AgentSearchResponse(BaseModel):
             "Mention the strongest matches and describe the list in a balanced way."
         )
     )
+
+
+def _fastmcp_available() -> bool:
+    return importlib.util.find_spec("fastmcp") is not None
 
 
 def _message_text(message: Any) -> str:
@@ -85,8 +95,12 @@ def _provider_label() -> str:
 
 
 def agent_is_available() -> tuple[bool, str | None]:
-    if create_agent is None or tool is None:
+    if create_agent is None:
         return False, "LangChain is not installed."
+    if MultiServerMCPClient is None:
+        return False, "langchain-mcp-adapters is not installed."
+    if not _fastmcp_available():
+        return False, "fastmcp is not installed."
     if DEFAULT_AGENT_PROVIDER == "gemini":
         if ChatGoogleGenerativeAI is None:
             return False, "langchain-google-genai is not installed."
@@ -120,38 +134,56 @@ def _build_llm():
     return ChatOllama(model=DEFAULT_OLLAMA_MODEL, temperature=0, base_url=DEFAULT_OLLAMA_BASE_URL)
 
 
-def _build_agent():
+def _extract_tool_payload(messages: list[Any]) -> dict[str, Any] | None:
+    for message in reversed(messages):
+        if getattr(message, "type", "") != "tool":
+            continue
+        text = _message_text(message)
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict) and "recommendations" in payload:
+            return payload
+    return None
+
+
+def _extract_json_object(text: str) -> dict[str, Any] | None:
+    payload_text = (text or "").strip()
+    if not payload_text:
+        return None
+
+    candidates = [payload_text]
+    match = __import__("re").search(r"\{.*\}", payload_text, __import__("re").DOTALL)
+    if match:
+        candidates.append(match.group(0))
+
+    for candidate in candidates:
+        try:
+            payload = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict):
+            return payload
+    return None
+
+
+async def _build_agent(mcp_server_url: str = DEFAULT_MCP_SERVER_URL):
+    resolved_mcp_url = mcp_server_url or DEFAULT_MCP_SERVER_URL
     llm = _build_llm()
-    tool_state = {"query_used": None, "recommendations": None}
+    client = MultiServerMCPClient(
+        {
+            "cineseek_search": {
+                "transport": "http",
+                "url": resolved_mcp_url,
+            }
+        }
+    )
+    tools = await client.get_tools()
 
-    @tool
-    def search_movies(query: str) -> str:
-        """Search the movie index for the user's query and return the top matches."""
-        from apps.demo import network
-
-        result = network.direct_recommend(query, k=DEFAULT_AGENT_CANDIDATE_K)
-        tool_state["query_used"] = result["query_used"]
-        tool_state["recommendations"] = result["recommendations"]
-        payload = []
-        for idx, item in enumerate(result["recommendations"], start=1):
-            structured = item.get("structured") or {}
-            payload.append(
-                {
-                    "rank": idx,
-                    "title": item["title"],
-                    "score": round(float(item["score"]), 4),
-                    "year": structured.get("release_year", ""),
-                    "genres": structured.get("genres", [])[:4],
-                    "overview": (structured.get("overview", "") or "")[:220],
-                    "tags": structured.get("tags", [])[:4],
-                }
-            )
-        return json.dumps(payload, ensure_ascii=False)
-
-    return create_agent(
+    agent = create_agent(
         model=llm,
-        tools=[search_movies],
-        response_format=AgentSearchResponse,
+        tools=tools,
         system_prompt=(
             "You help users search for movies. "
             "If the user's query is vague, rewrite it into a clearer movie search query before calling the tool. "
@@ -164,30 +196,40 @@ def _build_agent():
             "Exclude clearly irrelevant candidates instead of keeping them just to fill space. "
             "Write a short overall summary of the final selected list. "
             "The summary should describe the strongest matches, briefly characterize the list as a whole, and avoid focusing only on the top rank. "
-            "Keep the summary under 90 words."
+            "Keep the summary under 90 words. "
+            "Return only valid JSON with this exact shape: "
+            '{"selected_titles":["Title 1","Title 2"],"summary":"..."} '
+            "Do not wrap the JSON in markdown fences."
         ),
-    ), tool_state
+    )
+    return agent
 
 
-def agent_recommend(raw_query: str) -> dict[str, Any]:
+async def _agent_recommend_async(raw_query: str, mcp_server_url: str = DEFAULT_MCP_SERVER_URL) -> dict[str, Any]:
     available, reason = agent_is_available()
     if not available:
         raise RuntimeError(reason or "Agent is unavailable.")
 
-    agent, tool_state = _build_agent()
-    result = agent.invoke({"messages": [{"role": "user", "content": raw_query}]})
+    agent = await _build_agent(mcp_server_url=mcp_server_url)
+    result = await agent.ainvoke({"messages": [{"role": "user", "content": raw_query}]})
     messages = result.get("messages", [])
     final_message = messages[-1] if messages else None
-    structured = result.get("structured_response")
     summary = ""
     selected_titles: list[str] = []
-    if structured is not None:
-        summary = structured.summary
-        selected_titles = list(structured.selected_titles or [])
-    elif final_message is not None:
-        summary = _message_text(final_message)
+    if final_message is not None:
+        final_text = _message_text(final_message)
+        payload = _extract_json_object(final_text)
+        if payload is not None:
+            selected_titles = [str(title) for title in payload.get("selected_titles", []) if str(title).strip()]
+            summary = str(payload.get("summary", "")).strip()
+        if not summary:
+            summary = final_text
 
-    recommendations = tool_state.get("recommendations") or []
+    tool_payload = _extract_tool_payload(messages) or {}
+    query_used = tool_payload.get("query_used") or raw_query
+    from apps.demo import network
+
+    recommendations = network.direct_recommend(query_used, k=DEFAULT_AGENT_CANDIDATE_K)["recommendations"]
     if selected_titles:
         title_to_items: dict[str, list[dict[str, Any]]] = {}
         for item in recommendations:
@@ -200,10 +242,13 @@ def agent_recommend(raw_query: str) -> dict[str, Any]:
         if selected:
             recommendations = selected
     recommendations = recommendations[:DEFAULT_AGENT_MAX_RESULTS]
-    query_used = tool_state.get("query_used") or raw_query
     return {
         "query_used": query_used,
         "recommendations": recommendations,
         "agent_summary": summary,
         "agent_model": _provider_label(),
     }
+
+
+def agent_recommend(raw_query: str, mcp_server_url: str = DEFAULT_MCP_SERVER_URL) -> dict[str, Any]:
+    return asyncio.run(_agent_recommend_async(raw_query, mcp_server_url=mcp_server_url))

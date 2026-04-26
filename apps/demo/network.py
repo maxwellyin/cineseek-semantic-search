@@ -326,12 +326,12 @@ def format_agent_error(exc: Exception) -> str:
     return "The agent is temporarily unavailable. Showing direct retrieval results instead."
 
 
-def recommend(raw_text: str, k: int = 12, use_agent: bool = False):
+def recommend(raw_text: str, k: int = 12, use_agent: bool = False, mcp_server_url: str | None = None):
     if use_agent:
         available, reason = agent_is_available()
         if available:
             try:
-                return agent_recommend(raw_text)
+                return agent_recommend(raw_text, mcp_server_url=mcp_server_url or "")
             except Exception as exc:  # pragma: no cover - defensive runtime fallback
                 fallback = direct_recommend(raw_text, k=k)
                 fallback["agent_error"] = format_agent_error(exc)

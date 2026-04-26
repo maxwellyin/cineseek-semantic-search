@@ -19,7 +19,7 @@ GEO_CACHE_DAYS = 7
 
 TRACKED_PAGE_PATHS = {"/", "/home", "/search", "/demo", "/demo/input"}
 SEARCH_PATHS = {"/search/results", "/demo/outcome"}
-IGNORED_PATH_PREFIXES = ("/static/",)
+IGNORED_PATH_PREFIXES = ("/static/", "/agent-tools/", "/mcp/search/")
 IGNORED_PATHS = {
     "/favicon.ico",
     "/apple-touch-icon.png",

@@ -9,7 +9,7 @@
 
 **CineSeek** is a semantic movie search system designed to demonstrate a full **retrieval engineering pipeline**, not just a prompt-based demo.
 
-It maps real user-style movie queries to titles using frozen sentence-transformer embeddings, serves candidates via FAISS, and optionally enhances results with an LLM-based agent for query rewriting, reranking, and explanation. Retrieved movies are rendered with structured metadata and poster artwork for qualitative inspection.
+It maps real user-style movie queries to titles using frozen sentence-transformer embeddings, serves candidates via FAISS, and optionally enhances results with an LLM-based agent for query rewriting, reranking, and explanation. The retrieval capability is also exposed as an **MCP-compatible search tool**, so the agent layer calls search through a protocol boundary rather than a hardwired local function. Retrieved movies are rendered with structured metadata and poster artwork for qualitative inspection.
 
 ------
 
@@ -20,6 +20,8 @@ It maps real user-style movie queries to titles using frozen sentence-transforme
 - **Strong raw embedding baseline** selected through controlled retrieval evaluation
 - **Low-latency ANN search** powered by FAISS
 - **Agent layer** (LangChain + Groq / Gemini / Ollama / OpenAI)
+- **MCP-exposed retrieval tool** for modular agent-to-search integration
+- **Optional public MCP endpoint** secured with a bearer token for external clients
 - **Poster-enhanced result UI** for easier qualitative evaluation
 - **Fully containerized deployment** via Docker + GHCR
 
@@ -42,6 +44,7 @@ CineSeek is built to demonstrate the **retrieval engineering loop**:
 - selecting a strong frozen embedding representation instead of overfitting a small training set
 - serving low-latency ANN search with FAISS
 - layering an LLM agent **on top of retrieval (not replacing it)**
+- exposing retrieval as a reusable **MCP search tool**
 
 👉 The goal is to showcase **system design + modeling + deployment** in a single project.
 
@@ -61,6 +64,7 @@ CineSeek is built to demonstrate the **retrieval engineering loop**:
   - Query rewriting
   - Reranking top-k results
   - Natural language explanation
+  - Retrieval accessed through an MCP tool interface
 - **Result presentation**
   - Movie posters
   - Plot overview
@@ -78,7 +82,8 @@ flowchart LR
   faiss --> lexical["Title-aware lexical fusion"]
   lexical --> agent{"Agent enabled?"}
   agent -- "No" --> direct["Direct ranked results"]
-  agent -- "Yes" --> llm["Groq / Gemini reranking + summary"]
+  agent -- "Yes" --> mcp["MCP search tool"]
+  mcp --> llm["Groq / Gemini reranking + summary"]
   llm --> final["Poster-enhanced movie results"]
   direct --> final
 ```
@@ -91,6 +96,7 @@ flowchart LR
 - **PyTorch** – tensor processing and offline evaluation
 - **FAISS** – ANN retrieval
 - **FastAPI + Jinja** – web interface
+- **LangChain MCP Adapters + FastMCP** – MCP tool layer
 - **LangChain + Groq / Gemini / Ollama / OpenAI** – agent layer
 - **Docker + GHCR** – deployment
 
@@ -158,6 +164,11 @@ The container includes:
 - cached embeddings
 - FAISS index
 
+The app also exposes:
+
+- internal MCP tool endpoint for the built-in agent: `/agent-tools/mcp`
+- optional public MCP endpoint for external clients: `/mcp/search/mcp`
+
 ### **Pull & Run**
 
 ```bash
@@ -208,6 +219,7 @@ docker run -p 8000:8000 \
 GROQ_API_KEY=...
 FLCR_AGENT_PROVIDER=groq
 FLCR_GROQ_MODEL=qwen/qwen3-32b
+FLCR_PUBLIC_MCP_BEARER_TOKEN=replace_with_a_long_random_token
 ```
 
 Optional:
@@ -224,10 +236,48 @@ OPENAI_API_KEY=...
 
 ------
 
+## **🔌 Public MCP Endpoint**
+
+CineSeek can expose its retrieval engine as a public MCP-compatible tool endpoint over HTTPS.
+
+- Internal agent endpoint:
+  - `/agent-tools/mcp`
+- Optional public endpoint for external MCP clients:
+  - `/mcp/search/mcp`
+- Public access is protected with:
+  - `Authorization: Bearer <FLCR_PUBLIC_MCP_BEARER_TOKEN>`
+
+The exposed tool is:
+
+- `search_movies(query: str, k: int = 30)`
+
+It returns compressed candidate results including:
+
+- title
+- year
+- genres
+- short overview
+- top tags
+
+Example MCP base URL in production:
+
+```text
+https://cineseek.maxwellyin.com/mcp/search/mcp
+```
+
+This allows the same semantic movie search capability to be used by:
+
+- the built-in CineSeek agent layer
+- external MCP clients
+- future downstream apps or orchestration layers
+
+------
+
 ## **📁 Project Layout**
 
 ```text
 apps/demo/          FastAPI UI
+apps/demo/search_mcp_server.py MCP search tool server
 flcr/raw_retrieval.py raw embedding construction
 flcr/index.py       FAISS index builder
 flcr/search.py      retrieval logic
@@ -240,6 +290,8 @@ flcr/data_processing/
 ## **🧠 Key Design Choices**
 
 - Retrieval-first system (Agent as an enhancement layer)
+- Retrieval exposed as an MCP tool for modular orchestration
+- Optional authenticated public MCP endpoint for external clients
 - Cached embeddings for fast iteration
 - Strong frozen baselines before adding trainable complexity
 - ANN retrieval for scalability

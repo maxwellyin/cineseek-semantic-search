@@ -26,6 +26,7 @@ APP_DIR = Path(__file__).resolve().parent
 DEFAULT_HOME_QUERY = "Mind-bending movies like Inception but darker"
 PUBLIC_MCP_PREFIX = "/mcp/search"
 PUBLIC_MCP_BEARER_TOKEN = os.environ.get("FLCR_PUBLIC_MCP_BEARER_TOKEN", "").strip()
+INTERNAL_MCP_SERVER_URL = os.environ.get("FLCR_INTERNAL_MCP_SERVER_URL", "").strip()
 app = FastAPI(lifespan=search_mcp_server.mcp_app.lifespan)
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
@@ -131,7 +132,7 @@ async def search_submit(request: Request, text: str = Form(default=""), use_agen
 @app.get("/demo/outcome", response_class=HTMLResponse)
 async def outcome(request: Request, text: str, use_agent: str = "0"):
     agent_enabled = use_agent == "1"
-    mcp_server_url = f"{request.base_url}agent-tools/mcp".rstrip("/")
+    mcp_server_url = INTERNAL_MCP_SERVER_URL or f"{request.base_url}agent-tools/mcp".rstrip("/")
     result = await run_in_threadpool(network.recommend, text, 12, agent_enabled, mcp_server_url)
     return render_template(
         request,

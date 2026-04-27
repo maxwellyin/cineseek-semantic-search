@@ -31,3 +31,5 @@ run*.sh
 start.sh
 *.sh
 !scripts/publish_docker.sh
+!scripts/build_asset_bundle.sh
+!scripts/publish_asset_release.sh

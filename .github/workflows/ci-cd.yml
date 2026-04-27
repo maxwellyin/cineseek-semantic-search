@@ -50,7 +50,11 @@ jobs:
       - name: Validate Docker publish script
         run: |
           bash -n scripts/publish_docker.sh
+          bash -n scripts/build_asset_bundle.sh
+          bash -n scripts/publish_asset_release.sh
           ./scripts/publish_docker.sh --help
+          ./scripts/build_asset_bundle.sh --help
+          ./scripts/publish_asset_release.sh --help
 
   build_and_push:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -87,6 +91,8 @@ jobs:
           push: true
           provenance: false
           sbom: false
+          build-args: |
+            ASSET_BUNDLE_URL=https://github.com/${{ github.repository }}/releases/download/assets-current/cineseek-assets.tar.gz
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 

@@ -21,7 +21,22 @@ docker --version
 docker compose version
 ```
 
-## 2. Fastest path: pull the prebuilt image
+## 2. Static retrieval assets
+
+Docker and GitHub Actions builds download the processed dataset, model cache, and
+FAISS index from a dedicated GitHub release asset bundle:
+
+```text
+assets-current / cineseek-assets.tar.gz
+```
+
+After retraining or rebuilding the index locally, refresh that bundle with:
+
+```bash
+./scripts/publish_asset_release.sh
+```
+
+## 3. Fastest path: pull the prebuilt image
 
 ```bash
 docker pull ghcr.io/maxwellyin/cineseek-semantic-search:latest
@@ -37,7 +52,7 @@ docker run -d \
   ghcr.io/maxwellyin/cineseek-semantic-search:latest
 ```
 
-## 3. Alternative: deploy from source
+## 4. Alternative: deploy from source
 
 If you prefer to build on the server:
 
@@ -63,7 +78,7 @@ FLCR_AGENT_PROVIDER=gemini
 FLCR_GEMINI_MODEL=gemini-2.5-flash-lite
 ```
 
-## 4. Build and start the app from source
+## 5. Build and start the app from source
 
 ```bash
 docker compose up -d --build
@@ -75,7 +90,7 @@ Check logs:
 docker compose logs -f
 ```
 
-## 5. Open the app
+## 6. Open the app
 
 By default the container listens on port `8000`.
 
@@ -91,7 +106,7 @@ For the public deployment, put a reverse proxy such as Nginx or Caddy in front o
 https://cineseek.maxwellyin.com/search
 ```
 
-## 6. Recommended firewall rules
+## 7. Recommended firewall rules
 
 During direct IP testing, allow:
 
@@ -103,14 +118,14 @@ For the public domain deployment, expose only:
 - `80/tcp`
 - `443/tcp`
 
-## 7. Updating after new commits
+## 8. Updating after new commits
 
 ```bash
 git pull
 docker compose up -d --build
 ```
 
-## 8. Optional GitHub Actions CI/CD
+## 9. Optional GitHub Actions CI/CD
 
 This repository can also deploy automatically after every push to `main`.
 
@@ -134,7 +149,7 @@ Old GHCR image versions are pruned separately by the `Prune GHCR Images` workflo
 
 ## Notes
 
-- This image already contains the processed dataset, local sentence-transformer cache, and FAISS index.
+- This image already contains the processed dataset, local sentence-transformer cache, FAISS index, and current retriever checkpoints from the release asset bundle.
 - The server does **not** need to run training or preprocessing.
 - Groq is the default hosted agent backend for this deployment.
 - Gemini is also supported if you prefer it over Groq.

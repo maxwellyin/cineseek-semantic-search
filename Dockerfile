@@ -1,5 +1,18 @@
-ARG ASSET_IMAGE=ghcr.io/maxwellyin/cineseek-semantic-search:latest
-FROM ${ASSET_IMAGE} AS asset_source
+ARG ASSET_BUNDLE_URL=https://github.com/maxwellyin/cineseek-semantic-search/releases/download/assets-current/cineseek-assets.tar.gz
+FROM python:3.11-slim AS asset_source
+
+ARG ASSET_BUNDLE_URL
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl tar \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /asset-source
+
+RUN test -n "${ASSET_BUNDLE_URL}" \
+    && curl -fsSL --retry 5 --retry-all-errors "${ASSET_BUNDLE_URL}" -o /tmp/cineseek-assets.tar.gz \
+    && tar -xzf /tmp/cineseek-assets.tar.gz -C /asset-source \
+    && rm -f /tmp/cineseek-assets.tar.gz
 
 FROM python:3.11-slim
 
@@ -26,11 +39,9 @@ COPY apps /app/apps
 COPY flcr /app/flcr
 COPY scripts /app/scripts
 COPY readme.md /app/readme.md
-RUN mkdir -p /app/artifacts/checkpoints
-COPY --from=asset_source /app/data/processed /app/data/processed
-COPY --from=asset_source /app/data/models /app/data/models
-COPY --from=asset_source /app/artifacts/checkpoints/msrd_items.faiss /app/artifacts/checkpoints/msrd_items.faiss
-COPY --from=asset_source /app/artifacts/checkpoints/msrd_index_metadata.pt /app/artifacts/checkpoints/msrd_index_metadata.pt
+COPY --from=asset_source /asset-source/data/processed /app/data/processed
+COPY --from=asset_source /asset-source/data/models /app/data/models
+COPY --from=asset_source /asset-source/artifacts/checkpoints /app/artifacts/checkpoints
 
 EXPOSE 8000
 

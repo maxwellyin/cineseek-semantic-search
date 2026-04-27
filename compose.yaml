@@ -1,6 +1,9 @@
 services:
   cineseek:
-    build: .
+    build:
+      context: .
+      args:
+        ASSET_BUNDLE_URL: ${ASSET_BUNDLE_URL:-https://github.com/maxwellyin/cineseek-semantic-search/releases/download/assets-current/cineseek-assets.tar.gz}
     container_name: cineseek
     restart: unless-stopped
     ports:

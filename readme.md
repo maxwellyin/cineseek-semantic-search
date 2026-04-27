@@ -24,6 +24,7 @@ It maps real user-style movie queries to titles using frozen sentence-transforme
 - **Optional public MCP endpoint** secured with a bearer token for external clients
 - **Poster-enhanced result UI** for easier qualitative evaluation
 - **Fully containerized deployment** via Docker + GHCR
+- **Release-based asset packaging** for reproducible model/index reuse without checking artifacts into git
 
 ------
 
@@ -163,6 +164,7 @@ The container includes:
 - processed dataset
 - cached embeddings
 - FAISS index
+- current retriever checkpoints
 
 The app also exposes:
 
@@ -199,6 +201,29 @@ cp .env.example .env
 docker compose up -d
 ```
 
+### **Static Asset Release**
+
+The processed dataset, sentence-transformer cache, FAISS index, and current
+retriever checkpoints are packaged into a dedicated GitHub release asset:
+
+- release tag: `assets-current`
+- asset name: `cineseek-assets.tar.gz`
+
+This keeps large retrieval artifacts out of git while still allowing Docker and
+GitHub Actions builds to remain reproducible.
+
+After retraining or rebuilding the index locally:
+
+```bash
+./scripts/publish_asset_release.sh
+```
+
+That refreshes the asset bundle used by:
+
+- local `docker build`
+- `docker compose build`
+- GitHub Actions image builds
+
 ------
 
 ### **Build Locally**
@@ -220,6 +245,7 @@ GROQ_API_KEY=...
 FLCR_AGENT_PROVIDER=groq
 FLCR_GROQ_MODEL=qwen/qwen3-32b
 FLCR_PUBLIC_MCP_BEARER_TOKEN=replace_with_a_long_random_token
+ASSET_BUNDLE_URL=https://github.com/maxwellyin/cineseek-semantic-search/releases/download/assets-current/cineseek-assets.tar.gz
 ```
 
 Optional:

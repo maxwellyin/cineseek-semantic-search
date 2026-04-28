@@ -48,6 +48,7 @@ DEFAULT_OLLAMA_BASE_URL = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434"
 DEFAULT_AGENT_CANDIDATE_K = int(os.environ.get("FLCR_AGENT_CANDIDATE_K", "30"))
 DEFAULT_AGENT_MAX_RESULTS = int(os.environ.get("FLCR_AGENT_MAX_RESULTS", "10"))
 DEFAULT_MCP_SERVER_URL = os.environ.get("FLCR_MCP_SERVER_URL", "http://127.0.0.1:8000/agent-tools/mcp")
+DEFAULT_AGENT_TIMEOUT = int(os.environ.get("FLCR_AGENT_TIMEOUT", "20"))
 
 
 class AgentSearchResponse(BaseModel):
@@ -126,12 +127,12 @@ def agent_is_available() -> tuple[bool, str | None]:
 
 def _build_llm():
     if DEFAULT_AGENT_PROVIDER == "gemini":
-        return ChatGoogleGenerativeAI(model=DEFAULT_GEMINI_MODEL, temperature=0)
+        return ChatGoogleGenerativeAI(model=DEFAULT_GEMINI_MODEL, temperature=0, timeout=DEFAULT_AGENT_TIMEOUT)
     if DEFAULT_AGENT_PROVIDER == "openai":
-        return ChatOpenAI(model=DEFAULT_OPENAI_MODEL, temperature=0)
+        return ChatOpenAI(model=DEFAULT_OPENAI_MODEL, temperature=0, request_timeout=DEFAULT_AGENT_TIMEOUT)
     if DEFAULT_AGENT_PROVIDER == "groq":
-        return ChatGroq(model=DEFAULT_GROQ_MODEL, temperature=0)
-    return ChatOllama(model=DEFAULT_OLLAMA_MODEL, temperature=0, base_url=DEFAULT_OLLAMA_BASE_URL)
+        return ChatGroq(model=DEFAULT_GROQ_MODEL, temperature=0, request_timeout=DEFAULT_AGENT_TIMEOUT)
+    return ChatOllama(model=DEFAULT_OLLAMA_MODEL, temperature=0, base_url=DEFAULT_OLLAMA_BASE_URL, request_timeout=DEFAULT_AGENT_TIMEOUT)
 
 
 def _extract_tool_payload(messages: list[Any]) -> dict[str, Any] | None:
@@ -211,7 +212,10 @@ async def _agent_recommend_async(raw_query: str, mcp_server_url: str = DEFAULT_M
         raise RuntimeError(reason or "Agent is unavailable.")
 
     agent = await _build_agent(mcp_server_url=mcp_server_url)
-    result = await agent.ainvoke({"messages": [{"role": "user", "content": raw_query}]})
+    result = await asyncio.wait_for(
+        agent.ainvoke({"messages": [{"role": "user", "content": raw_query}]}),
+        timeout=DEFAULT_AGENT_TIMEOUT,
+    )
     messages = result.get("messages", [])
     final_message = messages[-1] if messages else None
     summary = ""

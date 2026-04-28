@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hmac
 import os
 from pathlib import Path
 import re
 from urllib.parse import urlencode
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -27,7 +29,16 @@ DEFAULT_HOME_QUERY = "Mind-bending movies like Inception but darker"
 PUBLIC_MCP_PREFIX = "/mcp/search"
 PUBLIC_MCP_BEARER_TOKEN = os.environ.get("FLCR_PUBLIC_MCP_BEARER_TOKEN", "").strip()
 INTERNAL_MCP_SERVER_URL = os.environ.get("FLCR_INTERNAL_MCP_SERVER_URL", "").strip()
-app = FastAPI(lifespan=search_mcp_server.mcp_app.lifespan)
+
+
+@asynccontextmanager
+async def app_lifespan(app_instance: FastAPI):
+    traffic_log.ensure_db()
+    async with search_mcp_server.mcp_app.lifespan(app_instance):
+        yield
+
+
+app = FastAPI(lifespan=app_lifespan)
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 app.mount("/agent-tools", search_mcp_server.mcp_app)
@@ -55,7 +66,7 @@ async def mcp_auth_middleware(request: Request, call_next):
     if request.url.path.startswith(PUBLIC_MCP_PREFIX):
         auth_header = request.headers.get("authorization", "").strip()
         expected = f"Bearer {PUBLIC_MCP_BEARER_TOKEN}" if PUBLIC_MCP_BEARER_TOKEN else ""
-        if not expected or auth_header != expected:
+        if not expected or not hmac.compare_digest(auth_header, expected):
             return JSONResponse(
                 {
                     "error": "Unauthorized",

@@ -6,6 +6,7 @@ import ipaddress
 import json
 from pathlib import Path
 import sqlite3
+from threading import Lock
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -16,6 +17,10 @@ APP_DIR = Path(__file__).resolve().parent
 TRAFFIC_DB_PATH = APP_DIR / "traffic.sqlite3"
 RETENTION_DAYS = 7
 GEO_CACHE_DAYS = 7
+CLEANUP_INTERVAL_SECONDS = 300
+_last_cleanup_at: datetime | None = None
+_db_initialized = False
+_db_init_lock = Lock()
 
 TRACKED_PAGE_PATHS = {"/", "/home", "/search", "/demo", "/demo/input"}
 SEARCH_PATHS = {"/search/results", "/demo/outcome"}
@@ -38,6 +43,17 @@ def _connect() -> sqlite3.Connection:
 
 
 def ensure_db() -> None:
+    global _db_initialized
+    if _db_initialized:
+        return
+    with _db_init_lock:
+        if _db_initialized:
+            return
+        _ensure_db_once()
+        _db_initialized = True
+
+
+def _ensure_db_once() -> None:
     with _connect() as conn:
         conn.execute(
             """
@@ -73,7 +89,6 @@ def cleanup_old_events() -> None:
     with _connect() as conn:
         conn.execute("DELETE FROM traffic_events WHERE created_at < ?", (cutoff,))
         conn.execute("DELETE FROM ip_geolocation_cache WHERE fetched_at < ?", (geo_cutoff,))
-
 
 def _client_ip(request: Request) -> str:
     for header_name in ("cf-connecting-ip", "true-client-ip", "x-real-ip"):
@@ -186,12 +201,21 @@ def should_track(request: Request) -> bool:
     return path in TRACKED_PAGE_PATHS or path in SEARCH_PATHS
 
 
+def _maybe_cleanup() -> None:
+    global _last_cleanup_at
+    now = datetime.now(UTC)
+    if _last_cleanup_at is not None and (now - _last_cleanup_at).total_seconds() < CLEANUP_INTERVAL_SECONDS:
+        return
+    _last_cleanup_at = now
+    cleanup_old_events()
+
+
 def record_request(request: Request, status_code: int) -> None:
     if not should_track(request):
         return
 
     ensure_db()
-    cleanup_old_events()
+    _maybe_cleanup()
 
     path = request.url.path
     event_type = "search" if path in SEARCH_PATHS else "page_view"
@@ -224,7 +248,7 @@ def record_request(request: Request, status_code: int) -> None:
 
 def fetch_dashboard(limit: int = 100) -> dict[str, object]:
     ensure_db()
-    cleanup_old_events()
+    _maybe_cleanup()
     cutoff = (datetime.now(UTC) - timedelta(days=RETENTION_DAYS)).isoformat()
     day_cutoff = (datetime.now(UTC) - timedelta(days=1)).isoformat()
 

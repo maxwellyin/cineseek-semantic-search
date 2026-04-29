@@ -7,6 +7,8 @@ logic which does not require a loaded FAISS index or sentence model.
 from __future__ import annotations
 
 import pytest
+import torch
+from types import SimpleNamespace
 
 from apps.demo.network import (
     candidate_bucket,
@@ -16,6 +18,7 @@ from apps.demo.network import (
     normalize_title_text,
     parse_item_metadata,
     rerank_with_title_signal,
+    similar_movies,
     title_match_score,
     title_signal_weight,
 )
@@ -145,3 +148,37 @@ class TestRerankWithTitleSignal:
         assert len(result) == 2
         assert all("semantic_score" in r for r in result)
         assert all("title_match_score" in r for r in result)
+
+
+class TestSimilarMovies:
+    def test_uses_item_neighbors(self, monkeypatch):
+        dataset = {
+            "item_titles": {1: "Seed Movie", 2: "Neighbor One", 3: "Neighbor Two"},
+            "item_metadata_texts": {
+                1: "Seed Movie genres: drama overview: Seed overview tags: emotional director: A actors: X characters: Y",
+                2: "Neighbor One genres: drama overview: Neighbor overview tags: moody director: B actors: X characters: Y",
+                3: "Neighbor Two genres: thriller overview: Another overview tags: dark director: C actors: X characters: Y",
+            },
+        }
+        poster_urls = {}
+        item_embeddings = torch.randn(3, 8)
+        fake_index = SimpleNamespace(ntotal=3)
+
+        monkeypatch.setattr(
+            "apps.demo.network.load_assets",
+            lambda: (dataset, fake_index, None, poster_urls, item_embeddings),
+        )
+        monkeypatch.setattr(
+            "apps.demo.network.lookup_movie",
+            lambda title: {"title": "Seed Movie", "item_idx": 1, "structured": {}, "poster_url": "", "metadata": ""},
+        )
+        monkeypatch.setattr(
+            "apps.demo.network.search_index",
+            lambda index, queries, k: (
+                torch.tensor([[1.0, 0.9, 0.8]]).numpy(),
+                torch.tensor([[0, 1, 2]]).numpy(),
+            ),
+        )
+
+        result = similar_movies("Seed Movie", k=2)
+        assert [item["title"] for item in result] == ["Neighbor One", "Neighbor Two"]

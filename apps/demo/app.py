@@ -4,7 +4,7 @@ import hmac
 import os
 from pathlib import Path
 import re
-from urllib.parse import urlencode
+from urllib.parse import quote_plus, urlencode
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Form, Request
@@ -55,6 +55,7 @@ def render_inline_markdown(value: str | None) -> Markup:
 
 
 templates.env.filters["inline_markdown"] = render_inline_markdown
+templates.env.filters["query_param"] = lambda value: quote_plus(str(value or ""))
 
 
 def render_template(request: Request, template_name: str, **context):
@@ -155,4 +156,20 @@ async def outcome(request: Request, text: str, use_agent: str = "0"):
         agent_error=result.get("agent_error"),
         agent_model=result.get("agent_model"),
         candidates=result["recommendations"],
+    )
+
+
+@app.get("/movie", response_class=HTMLResponse, name="movie_detail")
+async def movie_detail(request: Request, title: str, use_agent: str = "0"):
+    movie = await run_in_threadpool(network.lookup_movie, title)
+    if movie is None:
+        return RedirectResponse(url=f"/search/results?{urlencode({'text': title, 'use_agent': use_agent})}", status_code=302)
+
+    related = await run_in_threadpool(network.similar_movies, movie["title"], 6)
+    return render_template(
+        request,
+        "movie.j2",
+        movie=movie,
+        related=related,
+        agent_enabled=(use_agent == "1"),
     )

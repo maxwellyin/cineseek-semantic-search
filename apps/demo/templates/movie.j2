@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ movie.title }} · CineSeek{% endblock %}
+
+{% block content %}
+<section class="page-card">
+  <div class="row g-4">
+    <div class="col-lg-5">
+      <div class="eyebrow mb-3">Movie Detail</div>
+      <div class="result-card h-100">
+        <div class="result-hero">
+          {% if movie.poster_url %}
+          <img class="result-poster" src="{{ movie.poster_url }}" alt="Poster for {{ movie.title }}" loading="lazy">
+          {% else %}
+          <div class="result-poster result-poster-placeholder">No poster</div>
+          {% endif %}
+
+          <div>
+            <h1 class="section-title mb-2">{{ movie.title }}</h1>
+            {% if movie.structured.overview %}
+            <p class="body-copy mb-0">{{ movie.structured.overview }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if movie.structured.genres %}
+        <div class="mt-4">
+          <div class="mini-label mb-2">Genres</div>
+          <div class="d-flex flex-wrap gap-2">
+            {% for genre in movie.structured.genres %}
+            <span class="badge rounded-pill text-bg-light border">{{ genre }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="row g-3 mt-1">
+          {% if movie.structured.director %}
+          <div class="col-md-6">
+            <div class="mini-label mb-1">Director</div>
+            <div class="body-copy mb-0">{{ movie.structured.director }}</div>
+          </div>
+          {% endif %}
+
+          {% if movie.structured.actors %}
+          <div class="col-md-6">
+            <div class="mini-label mb-1">Actors</div>
+            <div class="body-copy mb-0">{{ movie.structured.actors|join(", ") }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if movie.structured.tags %}
+        <div class="mt-4">
+          <div class="mini-label mb-2">Tags</div>
+          <div class="d-flex flex-wrap gap-2">
+            {% for tag in movie.structured.tags %}
+            <span class="badge rounded-pill" style="background: rgba(198, 93, 46, 0.12); color: var(--accent-dark); border: 1px solid rgba(198, 93, 46, 0.15);">{{ tag }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="eyebrow mb-3">Similar Picks</div>
+      <div class="d-grid gap-3">
+        {% for candidate in related %}
+        <div class="result-card">
+          {% set info = candidate.structured %}
+          <div class="result-hero">
+            {% if candidate.poster_url %}
+            <img class="result-poster" src="{{ candidate.poster_url }}" alt="Poster for {{ candidate.title }}" loading="lazy">
+            {% else %}
+            <div class="result-poster result-poster-placeholder">No poster</div>
+            {% endif %}
+
+            <div>
+              <h2 class="result-title mb-2">
+                <a class="result-title-link" href="/movie?title={{ candidate.title|query_param }}&use_agent={{ '1' if agent_enabled else '0' }}">{{ candidate.title }}</a>
+              </h2>
+              {% if info.overview %}
+              <p class="body-copy mb-0">{{ info.overview }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

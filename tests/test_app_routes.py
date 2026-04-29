@@ -21,7 +21,7 @@ def client():
 class TestAppRoutes:
     def test_expected_routes_exist(self):
         paths = {getattr(route, "path", "") for route in app.routes}
-        expected = {"/", "/search", "/search/results", "/health", "/ops/traffic"}
+        expected = {"/", "/search", "/search/results", "/movie", "/health", "/ops/traffic"}
         missing = expected - paths
         assert not missing, f"Missing routes: {missing}"
 

@@ -9,7 +9,7 @@ from sentence_transformers import SentenceTransformer
 
 from flcr.agent.langchain_agent import agent_is_available, agent_recommend
 from flcr.config import DATASET_PATH, INDEX_PATH, ITEM_TABLE_PATH, SENTENCE_MODEL_DIR, SENTENCE_TRANSFORMER_DEVICE
-from flcr.raw_retrieval import DEFAULT_RAW_MODE, build_raw_query_embeddings
+from flcr.raw_retrieval import DEFAULT_RAW_MODE, build_raw_item_embeddings, build_raw_query_embeddings
 from flcr.search import load_index, search_index
 
 
@@ -250,11 +250,71 @@ def load_assets():
     index = load_index(INDEX_PATH)
     sentence_model = SentenceTransformer(str(SENTENCE_MODEL_DIR), device=SENTENCE_TRANSFORMER_DEVICE)
     poster_urls = load_poster_urls()
-    return dataset, index, sentence_model, poster_urls
+    item_embeddings = build_raw_item_embeddings(dataset, mode=DEFAULT_RAW_MODE).cpu()
+    return dataset, index, sentence_model, poster_urls, item_embeddings
+
+
+def build_recommendation(dataset: dict, poster_urls: dict[int, str], item_idx: int, score: float) -> dict[str, object]:
+    metadata = dataset["item_metadata_texts"][item_idx]
+    return {
+        "title": dataset["item_titles"][item_idx],
+        "metadata": metadata,
+        "structured": parse_item_metadata(metadata),
+        "poster_url": poster_urls.get(item_idx, ""),
+        "score": float(score),
+    }
+
+
+def lookup_movie(title: str) -> dict[str, object] | None:
+    dataset, _, _, poster_urls, _ = load_assets()
+    wanted = (title or "").strip()
+    if not wanted:
+        return None
+
+    normalized_wanted = normalize_title_text(wanted)
+    fallback_match = None
+
+    for item_idx in range(1, len(dataset["item_titles"])):
+        item_title = dataset["item_titles"][item_idx]
+        if item_title == wanted:
+            movie = build_recommendation(dataset, poster_urls, item_idx, 1.0)
+            movie["item_idx"] = item_idx
+            return movie
+        if fallback_match is None and normalize_title_text(item_title) == normalized_wanted:
+            fallback_match = item_idx
+
+    if fallback_match is None:
+        return None
+
+    movie = build_recommendation(dataset, poster_urls, fallback_match, 1.0)
+    movie["item_idx"] = fallback_match
+    return movie
+
+
+def similar_movies(title: str, k: int = 6) -> list[dict[str, object]]:
+    movie = lookup_movie(title)
+    if movie is None:
+        return []
+
+    dataset, index, _, poster_urls, item_embeddings = load_assets()
+    seed_idx = int(movie["item_idx"])
+    seed_vector = item_embeddings[seed_idx - 1 : seed_idx]
+    scores, idxes = search_index(index, seed_vector, k=min(max(k + 1, 8), index.ntotal))
+
+    recommendations = []
+    for score, idx in zip(scores[0].tolist(), idxes[0].tolist()):
+        item_idx = idx + 1
+        if item_idx == seed_idx:
+            continue
+        recommendations.append(build_recommendation(dataset, poster_urls, item_idx, float(score)))
+        if len(recommendations) >= k:
+            break
+
+    return recommendations
 
 
 def direct_recommend(raw_text: str, k: int = 12):
-    dataset, index, sentence_model, poster_urls = load_assets()
+    dataset, index, sentence_model, poster_urls, _ = load_assets()
     query_embedding = sentence_model.encode(
         [raw_text],
         batch_size=1,
@@ -270,15 +330,7 @@ def direct_recommend(raw_text: str, k: int = 12):
     recommendations = []
     for score, idx in zip(scores[0].tolist(), idxes[0].tolist()):
         item_idx = idx + 1
-        recommendations.append(
-            {
-                "title": dataset["item_titles"][item_idx],
-                "metadata": dataset["item_metadata_texts"][item_idx],
-                "structured": parse_item_metadata(dataset["item_metadata_texts"][item_idx]),
-                "poster_url": poster_urls.get(item_idx, ""),
-                "score": float(score),
-            }
-        )
+        recommendations.append(build_recommendation(dataset, poster_urls, item_idx, float(score)))
     recommendations = rerank_with_title_signal(raw_text, recommendations)
     recommendations = diversify_recommendations(raw_text, recommendations, k)
     return {"query_used": raw_text, "recommendations": recommendations}
@@ -286,7 +338,7 @@ def direct_recommend(raw_text: str, k: int = 12):
 
 def health_status() -> dict[str, object]:
     try:
-        dataset, index, sentence_model, poster_urls = load_assets()
+        dataset, index, sentence_model, poster_urls, _ = load_assets()
         agent_available, agent_reason = agent_is_available()
         return {
             "status": "ok",

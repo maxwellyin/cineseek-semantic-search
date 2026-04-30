@@ -25,6 +25,13 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -37,12 +44,35 @@ jobs:
       - name: Compile Python modules
         run: python -m compileall apps/demo flcr
 
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint frontend
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: frontend
+
       - name: Smoke check app routes
         run: |
           python - <<'PY'
           from apps.demo.app import app
           paths = {getattr(route, "path", "") for route in app.routes}
-          expected = {"/", "/search", "/search/results", "/health", "/ops/traffic"}
+          expected = {
+              "/",
+              "/about",
+              "/search",
+              "/search/results",
+              "/movie",
+              "/health",
+              "/ops/traffic",
+              "/api/config",
+              "/api/search",
+              "/api/movie",
+          }
           missing = sorted(expected - paths)
           if missing:
               raise SystemExit(f"Missing expected routes: {missing}")
@@ -57,9 +87,11 @@ jobs:
           bash -n scripts/publish_docker.sh
           bash -n scripts/build_asset_bundle.sh
           bash -n scripts/publish_asset_release.sh
+          bash -n scripts/cineseek_deploy.sh
           ./scripts/publish_docker.sh --help
           ./scripts/build_asset_bundle.sh --help
           ./scripts/publish_asset_release.sh --help
+          ./scripts/cineseek_deploy.sh --help
 
   build_and_push:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -106,6 +138,20 @@ jobs:
     needs: build_and_push
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Upload deploy script to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT != '' && secrets.VPS_PORT || '22' }}
+          source: scripts/cineseek_deploy.sh
+          target: /root
+          overwrite: true
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -117,4 +163,7 @@ jobs:
           script: |
             set -euo pipefail
             cd /root
+            chmod +x /root/scripts/cineseek_deploy.sh
+            cp /root/scripts/cineseek_deploy.sh /root/cineseek_deploy.sh
+            chmod +x /root/cineseek_deploy.sh
             ./cineseek_deploy.sh

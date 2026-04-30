@@ -21,7 +21,7 @@ def client():
 class TestAppRoutes:
     def test_expected_routes_exist(self):
         paths = {getattr(route, "path", "") for route in app.routes}
-        expected = {"/", "/search", "/search/results", "/movie", "/health", "/ops/traffic"}
+        expected = {"/", "/about", "/search", "/search/results", "/movie", "/health", "/ops/traffic", "/api/config", "/api/search", "/api/movie"}
         missing = expected - paths
         assert not missing, f"Missing routes: {missing}"
 
@@ -35,6 +35,11 @@ class TestAppRoutes:
         assert response.status_code == 200
         assert "Search" in response.text
 
+    def test_about_page(self, client):
+        response = client.get("/about")
+        assert response.status_code == 200
+        assert "CineSeek" in response.text
+
     def test_head_home(self, client):
         response = client.head("/")
         assert response.status_code == 200
@@ -42,7 +47,7 @@ class TestAppRoutes:
     def test_favicon_redirect(self, client):
         response = client.get("/favicon.ico", follow_redirects=False)
         assert response.status_code == 308
-        assert "/static/favicon.svg" in response.headers.get("location", "")
+        assert "/favicon.svg" in response.headers.get("location", "")
 
 
 class TestMCPAuth:

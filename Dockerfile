@@ -14,6 +14,16 @@ RUN test -n "${ASSET_BUNDLE_URL}" \
     && tar -xzf /tmp/cineseek-assets.tar.gz -C /asset-source \
     && rm -f /tmp/cineseek-assets.tar.gz
 
+FROM node:22-alpine AS frontend_builder
+
+WORKDIR /frontend
+
+COPY frontend/package.json frontend/package-lock.json /frontend/
+RUN npm ci
+
+COPY frontend /frontend
+RUN npm run build
+
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -38,10 +48,12 @@ RUN pip install --upgrade pip \
 COPY apps /app/apps
 COPY flcr /app/flcr
 COPY scripts /app/scripts
+COPY frontend/public /app/frontend/public
 COPY readme.md /app/readme.md
 COPY --from=asset_source /asset-source/data/processed /app/data/processed
 COPY --from=asset_source /asset-source/data/models /app/data/models
 COPY --from=asset_source /asset-source/artifacts/checkpoints /app/artifacts/checkpoints
+COPY --from=frontend_builder /frontend/dist /app/frontend/dist
 
 EXPOSE 8000
 

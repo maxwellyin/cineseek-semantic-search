@@ -10,6 +10,9 @@
 *.jpg
 *.png
 !docs/*.png
+!frontend/**/*.png
+!frontend/**/*.jpg
+!frontend/**/*.svg
 
 .DS_Store
 tea_debug.log
@@ -26,6 +29,8 @@ core.*
 artifacts/
 wandb/
 .venv/
+frontend/node_modules/
+frontend/dist/
 
 run*.sh
 start.sh
@@ -33,3 +38,4 @@ start.sh
 !scripts/publish_docker.sh
 !scripts/build_asset_bundle.sh
 !scripts/publish_asset_release.sh
+!scripts/cineseek_deploy.sh

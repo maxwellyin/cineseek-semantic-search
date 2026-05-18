@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -42,7 +42,7 @@ const cardItemVariants = {
   },
 };
 
-function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSearch, onSelectMovie }) {
+function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMovie }) {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(() => Boolean((query || '').trim()));
   const [error, setError] = useState(null);

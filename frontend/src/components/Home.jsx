@@ -47,7 +47,7 @@ function Home({ defaultQuery, agentAvailable, onSearch }) {
             name="text"
             className="query-box"
             placeholder={`Try: "${defaultQuery}"`}
-            rows={4}
+            rows={1}
             ref={textareaRef}
           />
 
@@ -103,20 +103,28 @@ function Home({ defaultQuery, agentAvailable, onSearch }) {
             .home-view {
               display: flex;
               flex-direction: column;
-              gap: 20px;
+              gap: 24px;
             }
 
             .hero-card {
-              padding: 32px;
+              padding: 40px 48px;
             }
 
             .hero-title {
-              max-width: none;
+              font-size: clamp(2rem, 3.8vw, 2.85rem);
+              line-height: 1.12;
+              max-width: 28ch;
+              margin-top: 0;
+              margin-bottom: 18px;
+              letter-spacing: -0.02em;
             }
 
             .hero-lede {
-              max-width: 82ch;
-              font-size: 1.12rem;
+              max-width: 68ch;
+              font-size: 1.05rem;
+              line-height: 1.65;
+              opacity: 0.85;
+              margin-bottom: 24px;
             }
 
             .home-gap-xs {
@@ -128,7 +136,7 @@ function Home({ defaultQuery, agentAvailable, onSearch }) {
             }
 
             .home-gap-md {
-              margin-top: 20px;
+              margin-top: 24px;
             }
 
             .search-stack {
@@ -138,30 +146,53 @@ function Home({ defaultQuery, agentAvailable, onSearch }) {
 
             .query-box {
               width: 100%;
-              min-height: 128px;
-              border-radius: 22px;
-              border: 1px solid var(--line);
-              background: rgba(255, 255, 255, 0.92);
-              padding: 18px 20px;
+              min-height: 56px;
+              height: 56px;
+              border-radius: 16px;
+              border: 1px solid rgba(24, 34, 47, 0.05);
+              background: rgba(255, 255, 255, 0.88);
+              padding: 16px 20px;
               font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-              font-size: 1rem;
-              line-height: 1.6;
-              box-shadow: inset 0 1px 0 rgba(24, 34, 47, 0.04);
-              resize: vertical;
+              font-size: 0.98rem;
+              line-height: 1.5;
+              box-shadow: 
+                0 2px 8px rgba(24, 34, 47, 0.02),
+                inset 0 1px 2px rgba(24, 34, 47, 0.03);
+              resize: none;
+              overflow-y: hidden;
+              transition: min-height var(--transition-smooth), height var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--transition-smooth), background-color var(--transition-smooth);
+            }
+
+            .query-box::placeholder {
+              color: var(--muted);
+              opacity: 0.5;
+            }
+
+            .query-box:hover {
+              border-color: rgba(198, 93, 46, 0.2);
+              box-shadow: 
+                0 4px 12px rgba(24, 34, 47, 0.03),
+                inset 0 1px 2px rgba(24, 34, 47, 0.02);
             }
 
             .query-box:focus {
               outline: none;
-              box-shadow: 0 0 0 0.25rem rgba(198, 93, 46, 0.16);
-              border-color: rgba(198, 93, 46, 0.45);
+              min-height: 110px;
+              height: 110px;
+              background: #ffffff;
+              border-color: rgba(198, 93, 46, 0.35);
+              box-shadow: 
+                0 12px 30px rgba(198, 93, 46, 0.06), 
+                0 0 0 4px rgba(198, 93, 46, 0.08);
+              overflow-y: auto;
             }
 
             .hero-actions {
               display: flex;
-              align-items: flex-start;
+              align-items: center;
               justify-content: space-between;
               gap: 16px;
-              margin-top: 16px;
+              margin-top: 20px;
             }
 
             .toggle-row {
@@ -169,15 +200,23 @@ function Home({ defaultQuery, agentAvailable, onSearch }) {
               align-items: center;
               gap: 10px;
               font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-              color: var(--muted);
+              color: var(--ink);
+              opacity: 0.85;
+              font-weight: 500;
+              cursor: pointer;
             }
 
             .toggle-row input {
               margin: 0;
+              cursor: pointer;
+              width: 16px;
+              height: 16px;
+              accent-color: var(--accent);
             }
 
             .hero-note {
-              margin-top: 8px;
+              margin-top: 6px;
+              opacity: 0.7;
             }
 
             .primary-btn {
@@ -185,19 +224,29 @@ function Home({ defaultQuery, agentAvailable, onSearch }) {
               align-items: center;
               justify-content: center;
               gap: 10px;
-              background: linear-gradient(135deg, var(--accent), #e77d4e);
+              background: #C96B3B;
               color: #fff;
               border-radius: 999px;
-              padding: 13px 22px;
+              padding: 13px 24px;
               font-family: Inter, ui-sans-serif, system-ui, sans-serif;
               font-weight: 700;
-              box-shadow: 0 12px 30px rgba(198, 93, 46, 0.22);
-              transition: transform 0.18s ease, box-shadow 0.18s ease;
+              font-size: 0.92rem;
+              box-shadow: 0 4px 14px rgba(201, 107, 59, 0.15);
+              transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), background-color var(--transition-smooth);
             }
 
             .primary-btn:hover {
-              transform: translateY(-1px);
-              box-shadow: 0 16px 32px rgba(198, 93, 46, 0.28);
+              background: #b55a2d;
+              transform: translateY(-1.5px);
+              box-shadow: 
+                0 8px 24px rgba(201, 107, 59, 0.22), 
+                0 0 0 4px rgba(201, 107, 59, 0.08);
+            }
+
+            .primary-btn:active {
+              background: #9d4c23;
+              transform: translateY(0);
+              box-shadow: 0 3px 10px rgba(201, 107, 59, 0.12);
             }
 
             .chip-row {
@@ -207,11 +256,12 @@ function Home({ defaultQuery, agentAvailable, onSearch }) {
             }
 
             .loading-panel {
-              margin-top: 20px;
+              margin-top: 24px;
               border-radius: 24px;
               border: 1px solid var(--line);
               background: rgba(255, 255, 255, 0.72);
               padding: 20px;
+              backdrop-filter: blur(8px);
             }
 
             .loading-row {
@@ -233,31 +283,52 @@ function Home({ defaultQuery, agentAvailable, onSearch }) {
 
             .loading-copy {
               margin: 0;
+              opacity: 0.8;
             }
 
             .query-chip {
-              border: 1px solid rgba(24, 34, 47, 0.12);
+              border: 1px solid rgba(24, 34, 47, 0.08);
               border-radius: 999px;
-              background: rgba(255, 255, 255, 0.78);
+              background: rgba(250, 248, 245, 0.75);
               color: var(--ink);
-              padding: 10px 14px;
+              padding: 10px 16px;
               text-align: left;
               font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-              font-size: 0.92rem;
-              transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+              font-size: 0.9rem;
+              font-weight: 500;
+              transition: background-color var(--transition-smooth), border-color var(--transition-smooth), transform var(--transition-smooth), box-shadow var(--transition-smooth);
             }
 
             .query-chip:hover {
-              background: rgba(198, 93, 46, 0.08);
-              border-color: rgba(198, 93, 46, 0.24);
-              transform: translateY(-1px);
+              background-color: #ffffff;
+              border-color: rgba(198, 93, 46, 0.3);
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(24, 34, 47, 0.04);
             }
 
-            @media (max-width: 720px) {
+            .query-chip:active {
+              transform: translateY(0);
+            }
+
+            .mini-label {
+              text-transform: uppercase;
+              letter-spacing: 0.08em;
+              font-size: 0.7rem;
+              font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+              font-weight: 700;
+              color: var(--muted);
+              opacity: 0.8;
+            }
+
+            @media (max-width: 768px) {
+              .hero-card {
+                padding: 30px 24px;
+              }
               .hero-actions {
                 flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
               }
-
               .primary-btn {
                 width: 100%;
               }

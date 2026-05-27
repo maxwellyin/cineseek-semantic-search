@@ -115,43 +115,45 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
           >
             <div className="results-layout">
               <aside className="results-side">
-                <div className="eyebrow results-gap-sm">Search Summary</div>
+                <div className="eyebrow results-gap-sm">Semantic Interpretation</div>
                 <div className="page-card dark-panel">
-                  <h2 className="section-title dark-title">Results for your query</h2>
-                  <div className="mono dark-query">“{query || defaultQuery}”</div>
+                  <div className="panel-content">
+                    <h2 className="section-title dark-title">Results for your query</h2>
+                    <div className="mono dark-query">“{query || defaultQuery}”</div>
 
-                  {refinedQuery && (
-                    <div className="summary-block">
-                      <div className="mini-label dark-label">Refined query</div>
-                      <div className="body-copy dark-copy">{refinedQuery}</div>
-                    </div>
-                  )}
-
-                  {results.agent_summary && (
-                    <div className="summary-block ai-summary-block">
-                      <div className="mini-label dark-label">LLM Agent</div>
-                      <div className="agent-badge">
-                        <span className="agent-badge-dot"></span>
-                        <span className="agent-badge-text">{results.agent_model}</span>
+                    {refinedQuery && (
+                      <div className="summary-block">
+                        <div className="mini-label dark-label">Refined query</div>
+                        <div className="body-copy dark-copy">{refinedQuery}</div>
                       </div>
-                      <div
-                        className="body-copy dark-copy ai-summary-copy"
-                        dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(results.agent_summary) }}
-                      />
-                    </div>
-                  )}
+                    )}
 
-                  {results.agent_error && (
-                    <div className="summary-block">
-                      <div className="mini-label dark-label">Fallback</div>
-                      <div className="body-copy dark-copy">{results.agent_error}</div>
-                    </div>
-                  )}
+                    {results.agent_summary && (
+                      <div className="summary-block ai-summary-block">
+                        <div className="mini-label dark-label">LLM Agent</div>
+                        <div className="agent-badge">
+                          <span className="agent-badge-dot"></span>
+                          <span className="agent-badge-text">{results.agent_model}</span>
+                        </div>
+                        <div
+                          className="body-copy dark-copy ai-summary-copy"
+                          dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(results.agent_summary) }}
+                        />
+                      </div>
+                    )}
 
-                  <button type="button" className="back-btn" onClick={searchAgain}>
-                    <ArrowLeft size={16} />
-                    <span>Run another search</span>
-                  </button>
+                    {results.agent_error && (
+                      <div className="summary-block">
+                        <div className="mini-label dark-label">Fallback</div>
+                        <div className="body-copy dark-copy">{results.agent_error}</div>
+                      </div>
+                    )}
+
+                    <button type="button" className="back-btn" onClick={searchAgain}>
+                      <ArrowLeft size={16} />
+                      <span>Run another search</span>
+                    </button>
+                  </div>
                 </div>
               </aside>
 
@@ -235,9 +237,7 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
             }
 
             .dark-panel {
-              background: 
-                radial-gradient(circle at 10% 10%, rgba(198, 93, 46, 0.04), transparent 60%),
-                rgba(250, 248, 245, 0.72);
+              background: rgba(250, 248, 245, 0.72);
               backdrop-filter: blur(16px);
               -webkit-backdrop-filter: blur(16px);
               color: var(--ink);
@@ -245,6 +245,41 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
               box-shadow: 0 20px 48px rgba(24, 34, 47, 0.04);
               position: relative;
               overflow: hidden;
+              padding: 24px 26px;
+            }
+
+            .dark-panel::before {
+              content: '';
+              position: absolute;
+              top: -30px;
+              left: -30px;
+              right: -30px;
+              bottom: -30px;
+              background: 
+                radial-gradient(circle at 30px 30px, rgba(255, 235, 222, 0.85) 0%, rgba(255, 235, 222, 0.2) 50%, transparent 80%),
+                radial-gradient(circle at 100% 100%, rgba(24, 34, 47, 0.04) 0%, transparent 60%);
+              filter: blur(36px);
+              -webkit-filter: blur(36px);
+              z-index: 1;
+              pointer-events: none;
+              transform: translate3d(0, 0, 0); /* Force GPU acceleration */
+            }
+
+            .dark-panel::after {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
+              z-index: 2;
+              pointer-events: none;
+            }
+
+            .panel-content {
+              position: relative;
+              z-index: 3;
             }
 
 
@@ -257,7 +292,7 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
             }
 
             .dark-query {
-              margin-top: 14px;
+              margin-top: 10px;
               color: var(--ink);
               opacity: 0.9;
               line-height: 1.6;
@@ -267,8 +302,8 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
             }
 
             .summary-block {
-              margin-top: 24px;
-              padding-top: 20px;
+              margin-top: 18px;
+              padding-top: 16px;
               border-top: 1px solid rgba(24, 34, 47, 0.06);
             }
 
@@ -276,22 +311,10 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
               border-radius: 20px;
               background: rgba(198, 93, 46, 0.03);
               border: 1px solid rgba(198, 93, 46, 0.08);
-              padding: 20px;
-              margin-top: 24px;
+              padding: 16px;
+              margin-top: 18px;
               position: relative;
               overflow: hidden;
-            }
-
-            .ai-summary-block::before {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: -150%;
-              width: 50%;
-              height: 100%;
-              background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-              transform: skewX(-25deg);
-              animation: shimmer 5s infinite linear;
             }
 
             .agent-badge {
@@ -349,7 +372,7 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
             }
 
             .back-btn {
-              margin-top: 30px;
+              margin-top: 22px;
               font-family: Inter, ui-sans-serif, system-ui, sans-serif;
               font-weight: 700;
               font-size: 0.9rem;
@@ -387,11 +410,6 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
               font-family: Inter, ui-sans-serif, system-ui, sans-serif;
             }
 
-            @keyframes shimmer {
-              0% { left: -150%; }
-              100% { left: 150%; }
-            }
-
             @keyframes spin {
               from { transform: rotate(0deg); }
               to { transform: rotate(360deg); }
@@ -415,21 +433,31 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
 
 function MovieCard({ movie, rank, onSelectMovie }) {
   const info = movie.structured || {};
+  const [showAllActors, setShowAllActors] = useState(false);
+  const [showAllTags, setShowAllTags] = useState(false);
 
   return (
     <motion.article
       variants={cardItemVariants}
       className="page-card movie-card"
+      onClick={onSelectMovie}
       whileHover={{
-        y: -4,
-        borderColor: 'rgba(198, 93, 46, 0.22)',
-        boxShadow: '0 20px 48px rgba(24, 34, 47, 0.06)',
+        y: -3,
+        borderColor: 'rgba(198, 93, 46, 0.16)',
+        boxShadow: '0 16px 36px rgba(24, 34, 47, 0.04)',
       }}
     >
       <div className="movie-head">
         <span className="result-rank">{rank}</span>
         <div className="movie-heading">
-          <button type="button" className="result-title-link" onClick={onSelectMovie}>
+          <button
+            type="button"
+            className="result-title-link"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectMovie();
+            }}
+          >
             {movie.title}
           </button>
         </div>
@@ -471,7 +499,21 @@ function MovieCard({ movie, rank, onSelectMovie }) {
             {info.actors?.length > 0 && (
               <div>
                 <div className="mini-label results-gap-xs">Actors</div>
-                <div className="body-copy compact-copy">{info.actors.join(', ')}</div>
+                <div className="body-copy compact-copy">
+                  {showAllActors ? info.actors.join(' · ') : info.actors.slice(0, 3).join(' · ')}
+                  {info.actors.length > 3 && (
+                    <button
+                      type="button"
+                      className="actors-toggle-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAllActors(!showAllActors);
+                      }}
+                    >
+                      {showAllActors ? ' (show less)' : ` +${info.actors.length - 3} more`}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -480,11 +522,23 @@ function MovieCard({ movie, rank, onSelectMovie }) {
             <div className="chip-block">
               <div className="mini-label results-gap-xs">Tags</div>
               <div className="chip-row">
-                {info.tags.map((tag) => (
+                {(showAllTags ? info.tags : info.tags.slice(0, 4)).map((tag) => (
                   <span key={tag} className="info-chip accent">
                     {tag}
                   </span>
                 ))}
+                {info.tags.length > 4 && (
+                  <button
+                    type="button"
+                    className="info-chip neutral tag-toggle-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAllTags(!showAllTags);
+                    }}
+                  >
+                    {showAllTags ? 'show less' : `+${info.tags.length - 4} more`}
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -497,6 +551,8 @@ function MovieCard({ movie, rank, onSelectMovie }) {
             .movie-card {
               padding: 28px 30px;
               cursor: pointer;
+              border: 1px solid rgba(24, 34, 47, 0.04);
+              box-shadow: 0 12px 32px rgba(24, 34, 47, 0.03);
             }
 
             .movie-head {
@@ -557,7 +613,7 @@ function MovieCard({ movie, rank, onSelectMovie }) {
               object-fit: cover;
               border-radius: 16px;
               box-shadow: 0 12px 28px rgba(24, 34, 47, 0.08);
-              transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+              transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             }
 
             .movie-card:hover .result-poster {
@@ -597,6 +653,36 @@ function MovieCard({ movie, rank, onSelectMovie }) {
               margin: 0;
               font-size: 0.95rem;
               font-weight: 500;
+            }
+
+            .actors-toggle-btn {
+              background: none;
+              border: none;
+              padding: 0;
+              color: var(--accent);
+              font-family: Inter, sans-serif;
+              font-size: 0.82rem;
+              font-weight: 700;
+              cursor: pointer;
+              margin-left: 6px;
+              transition: color var(--transition-smooth);
+              display: inline-block;
+            }
+
+            .actors-toggle-btn:hover {
+              color: var(--accent-dark);
+              text-decoration: underline;
+            }
+
+            .tag-toggle-btn {
+              cursor: pointer;
+              transition: all var(--transition-smooth);
+            }
+
+            .tag-toggle-btn:hover {
+              background: rgba(24, 34, 47, 0.08) !important;
+              border-color: rgba(24, 34, 47, 0.16) !important;
+              color: var(--ink) !important;
             }
 
             .chip-block + .chip-block {

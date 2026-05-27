@@ -38,14 +38,19 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-echo "==> Pulling latest image..."
-docker pull "$IMAGE"
+
 
 echo "==> Stopping old container (if exists)..."
 docker stop "$CONTAINER" 2>/dev/null || true
 
 echo "==> Removing old container (if exists)..."
 docker rm "$CONTAINER" 2>/dev/null || true
+
+echo "==> Pruning old unused images to free space..."
+docker image prune -af
+
+echo "==> Pulling latest image..."
+docker pull "$IMAGE"
 
 echo "==> Starting new container..."
 docker run -d \

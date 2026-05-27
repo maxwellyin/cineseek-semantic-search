@@ -115,8 +115,8 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
           >
             <div className="results-layout">
               <aside className="results-side">
+                <div className="eyebrow results-gap-sm">Search Summary</div>
                 <div className="page-card dark-panel">
-                  <div className="eyebrow dark-kicker">Search Summary</div>
                   <h2 className="section-title dark-title">Results for your query</h2>
                   <div className="mono dark-query">“{query || defaultQuery}”</div>
 
@@ -236,24 +236,20 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
 
             .dark-panel {
               background: 
-                radial-gradient(circle at 10% 10%, rgba(198, 93, 46, 0.05), transparent 60%),
-                radial-gradient(circle at 90% 90%, rgba(24, 34, 47, 0.97), rgba(12, 18, 26, 0.99)),
-                url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.035'/%3E%3C/svg%3E");
-              color: #f8f4ee;
-              border: 1px solid rgba(255, 255, 255, 0.06);
-              box-shadow: 0 24px 64px rgba(12, 18, 26, 0.28);
+                radial-gradient(circle at 10% 10%, rgba(198, 93, 46, 0.04), transparent 60%),
+                rgba(250, 248, 245, 0.72);
+              backdrop-filter: blur(16px);
+              -webkit-backdrop-filter: blur(16px);
+              color: var(--ink);
+              border: 1px solid rgba(24, 34, 47, 0.06);
+              box-shadow: 0 20px 48px rgba(24, 34, 47, 0.04);
               position: relative;
               overflow: hidden;
             }
 
-            .dark-kicker {
-              color: var(--accent);
-              opacity: 0.9;
-              font-weight: 700;
-            }
 
             .dark-title {
-              color: #f8f4ee;
+              color: var(--ink);
               font-size: 1.5rem;
               margin: 10px 0 0 0;
               letter-spacing: -0.01em;
@@ -262,7 +258,8 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
 
             .dark-query {
               margin-top: 14px;
-              color: rgba(255, 255, 255, 0.92);
+              color: var(--ink);
+              opacity: 0.9;
               line-height: 1.6;
               font-size: 1.1rem;
               font-style: italic;
@@ -272,13 +269,13 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
             .summary-block {
               margin-top: 24px;
               padding-top: 20px;
-              border-top: 1px solid rgba(255, 255, 255, 0.08);
+              border-top: 1px solid rgba(24, 34, 47, 0.06);
             }
 
             .ai-summary-block {
               border-radius: 20px;
-              background: rgba(255, 255, 255, 0.04);
-              border: 1px solid rgba(255, 255, 255, 0.07);
+              background: rgba(198, 93, 46, 0.03);
+              border: 1px solid rgba(198, 93, 46, 0.08);
               padding: 20px;
               margin-top: 24px;
               position: relative;
@@ -292,7 +289,7 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
               left: -150%;
               width: 50%;
               height: 100%;
-              background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+              background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
               transform: skewX(-25deg);
               animation: shimmer 5s infinite linear;
             }
@@ -301,8 +298,8 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
               display: inline-flex;
               align-items: center;
               gap: 8px;
-              background: rgba(198, 93, 46, 0.15);
-              border: 1px solid rgba(198, 93, 46, 0.25);
+              background: rgba(198, 93, 46, 0.08);
+              border: 1px solid rgba(198, 93, 46, 0.15);
               border-radius: 99px;
               padding: 4px 10px;
               margin-top: 8px;
@@ -313,25 +310,27 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
               width: 6px;
               height: 6px;
               border-radius: 99px;
-              background: #f1b24c;
-              box-shadow: 0 0 8px #f1b24c;
+              background: var(--accent);
+              box-shadow: 0 0 6px var(--accent);
             }
 
             .agent-badge-text {
               font-family: Inter, sans-serif;
               font-size: 0.76rem;
               font-weight: 700;
-              color: #f8f4ee;
+              color: var(--accent-dark);
               text-transform: uppercase;
               letter-spacing: 0.04em;
             }
 
             .dark-label {
-              color: rgba(255, 255, 255, 0.6);
+              color: var(--muted);
+              opacity: 0.9;
             }
 
             .dark-copy {
-              color: rgba(255, 255, 255, 0.88);
+              color: var(--ink);
+              opacity: 0.92;
               font-size: 0.96rem;
               line-height: 1.6;
             }
@@ -343,7 +342,8 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
             .dark-copy code {
               padding: 2px 6px;
               border-radius: 6px;
-              background: rgba(255, 255, 255, 0.08);
+              background: rgba(24, 34, 47, 0.04);
+              color: var(--accent-dark);
               font-size: 0.88em;
               font-family: monospace;
             }
@@ -353,19 +353,19 @@ function ResultsView({ query, useAgent, defaultQuery, agentAvailable, onSelectMo
               font-family: Inter, ui-sans-serif, system-ui, sans-serif;
               font-weight: 700;
               font-size: 0.9rem;
-              color: #f8f4ee;
+              color: var(--ink);
               text-align: left;
               padding: 10px 16px;
               border-radius: 99px;
-              background: rgba(255, 255, 255, 0.06);
-              border: 1px solid rgba(255, 255, 255, 0.08);
+              background: rgba(24, 34, 47, 0.04);
+              border: 1px solid rgba(24, 34, 47, 0.08);
               display: inline-flex;
               align-items: center;
               gap: 8px;
             }
 
             .back-btn:hover {
-              background: rgba(255, 255, 255, 0.12);
+              background: rgba(24, 34, 47, 0.08);
               transform: translateX(-2px);
             }
 

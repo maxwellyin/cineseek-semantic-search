@@ -67,7 +67,7 @@ Edit `.env` and set:
 ```bash
 GROQ_API_KEY=your_groq_api_key
 FLCR_AGENT_PROVIDER=groq
-FLCR_GROQ_MODEL=qwen/qwen3-32b
+FLCR_GROQ_MODEL=openai/gpt-oss-120b
 ```
 
 Or use Gemini instead:

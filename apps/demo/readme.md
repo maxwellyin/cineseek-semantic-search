@@ -32,7 +32,7 @@ Optional agent mode:
 Default provider:
 
 - `FLCR_AGENT_PROVIDER=groq`
-- `FLCR_GROQ_MODEL=qwen/qwen3-32b`
+- `FLCR_GROQ_MODEL=openai/gpt-oss-120b`
 
 Optional provider override:
 

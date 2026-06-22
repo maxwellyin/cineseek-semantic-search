@@ -31,7 +31,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     FLCR_DEVICE=cpu \
     FLCR_AGENT_PROVIDER=groq \
-    FLCR_GROQ_MODEL=qwen/qwen3-32b
+    FLCR_GROQ_MODEL=openai/gpt-oss-120b
 
 WORKDIR /app
 

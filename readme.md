@@ -243,7 +243,7 @@ docker run -p 8000:8000 \
 ```bash
 GROQ_API_KEY=...
 FLCR_AGENT_PROVIDER=groq
-FLCR_GROQ_MODEL=qwen/qwen3-32b
+FLCR_GROQ_MODEL=openai/gpt-oss-120b
 FLCR_PUBLIC_MCP_BEARER_TOKEN=replace_with_a_long_random_token
 ASSET_BUNDLE_URL=https://github.com/maxwellyin/cineseek-semantic-search/releases/download/assets-current/cineseek-assets.tar.gz
 ```
